@@ -62,6 +62,7 @@ IMPORTANT : Vous devez UNIQUEMENT répondre aux questions liées à la maladie c
 }
 
 // Filter citations by region based on domain/URL patterns
+// Returns prioritized list: region-specific sources first, then others
 function filterCitationsByRegion(citations, region) {
   if (!citations || citations.length === 0) return citations;
   
@@ -73,14 +74,15 @@ function filterCitationsByRegion(citations, region) {
       /canadian.*celiac/i,
       /healthcanada/i,
       /hc-sc\.gc\.ca/i,
-      /canada\.ca/i
+      /canada\.ca/i,
+      /canadianceliac/i,
+      /celiac.*canada/i,
+      /canada.*health/i
     ],
     usa: [
       /beyondceliac/i,
       /celiac\.org/i,
       /celiacdisease\.org/i,
-      /\.gov(\/|$)/i, // US government sites
-      /\.edu(\/|$)/i, // US educational institutions
       /fda\.gov/i,
       /nih\.gov/i,
       /cdc\.gov/i,
@@ -90,9 +92,13 @@ function filterCitationsByRegion(citations, region) {
       /harvard\.edu/i,
       /stanford\.edu/i,
       /johnshopkins\.edu/i,
-      /\.us(\/|$)/i, // US country code
       /americanceliac\.org/i,
-      /gluten\.org/i
+      /gluten\.org/i,
+      /celiac.*usa/i,
+      /us.*celiac/i,
+      /american.*celiac/i,
+      // More specific US patterns - check for .gov or .edu in US context
+      /^https?:\/\/[^\/]+\.(gov|edu)(\/|$)/i
     ],
     europe: [
       /\.(eu|uk|de|fr|it|es|nl|be|ch|at|se|no|dk|fi|pl|ie|pt|gr|cz|ro|hu|sk|bg|hr|si|lt|lv|ee|mt|lu|cy)(\/|$)/i,
@@ -106,24 +112,53 @@ function filterCitationsByRegion(citations, region) {
       /\.de(\/|$)/i,
       /\.fr(\/|$)/i,
       /\.it(\/|$)/i,
-      /\.es(\/|$)/i
+      /\.es(\/|$)/i,
+      /european.*coeliac/i,
+      /celiac.*europe/i
     ]
   };
   
   const patterns = regionPatterns[region] || regionPatterns.canada;
   
-  // Filter citations that match the region patterns
-  const filtered = citations.filter(citation => {
+  // Separate citations into region-specific and others
+  const regionSpecific = [];
+  const others = [];
+  
+  citations.forEach(citation => {
     const url = typeof citation === 'string' ? citation : (citation.url || citation.link || '');
-    if (!url) return false;
+    if (!url) {
+      others.push(citation);
+      return;
+    }
     
     // Check if URL matches any of the region patterns
-    return patterns.some(pattern => pattern.test(url));
+    const isRegionSpecific = patterns.some(pattern => pattern.test(url));
+    
+    if (isRegionSpecific) {
+      regionSpecific.push(citation);
+    } else {
+      others.push(citation);
+    }
   });
   
-  // If no citations match, return original (better than nothing)
-  // But prioritize region-specific ones if we have any
-  return filtered.length > 0 ? filtered : citations;
+  // Return region-specific sources first, then others
+  // This ensures region-specific sources are prioritized in the UI
+  const prioritized = [...regionSpecific, ...others];
+  
+  // If we have region-specific sources, prefer showing those
+  // But if we have very few region-specific sources, include some others for context
+  if (regionSpecific.length > 0 && regionSpecific.length < 3 && others.length > 0) {
+    // Include a few non-region sources for context, but prioritize region-specific
+    return prioritized;
+  }
+  
+  // If we have good number of region-specific sources, prefer those
+  if (regionSpecific.length >= 3) {
+    return regionSpecific;
+  }
+  
+  // Fallback: return all sources if no region-specific ones found
+  return prioritized;
 }
 
 app.post('/api/chat', async (req, res) => {
@@ -151,12 +186,12 @@ app.post('/api/chat', async (req, res) => {
     
     // Enhance user message with region-specific context for better source filtering
     const regionKeywords = {
-      canada: 'Focus on Canadian sources, regulations, and organizations.',
-      usa: 'Focus on US sources, FDA regulations, and American organizations.',
-      europe: 'Focus on European sources, EU regulations, and European organizations.'
+      canada: 'IMPORTANT: Prioritize and cite Canadian sources, regulations, organizations, and resources. Prefer sources from .ca domains, Health Canada, Canadian Celiac Association, and Canadian healthcare systems.',
+      usa: 'IMPORTANT: Prioritize and cite US sources, FDA regulations, and American organizations. Prefer sources from .gov, .edu, and US celiac organizations like Beyond Celiac and Celiac Disease Foundation.',
+      europe: 'IMPORTANT: Prioritize and cite European sources, EU regulations, and European organizations. Prefer sources from European domains (.eu, .uk, .de, .fr, etc.), EU celiac societies, and European healthcare systems.'
     };
     const regionHint = regionKeywords[region] || regionKeywords.canada;
-    const enhancedUserMessage = `${message} ${regionHint}`;
+    const enhancedUserMessage = `${message}\n\n${regionHint}`;
     
     // Build messages array - Perplexity may or may not support system messages
     // We'll try with system message first, but can fallback if needed
@@ -391,8 +426,15 @@ app.post('/api/chat', async (req, res) => {
         }
       }
       
-      // Use filtered sources if we have any, otherwise use all sources
+      // Prioritize region-specific sources
+      // If we have region-specific sources, use those primarily
+      // Otherwise, use all sources but log a warning
       const finalSources = filteredSources.length > 0 ? filteredSources : uniqueSources;
+      
+      if (filteredSources.length === 0 && uniqueSources.length > 0) {
+        console.log('WARNING: No region-specific sources found. Using all available sources.');
+        console.log('Consider enhancing the query or region patterns to find region-specific sources.');
+      }
       
       res.json({ 
         reply: replyText,

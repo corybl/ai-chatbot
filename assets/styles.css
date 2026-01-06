@@ -216,25 +216,32 @@ body {
   color: var(--text);
   padding: 16px 0; /* Increased vertical padding */
   border-radius: 0;
-  line-height: 1.8; /* Increased line height for better readability */
-  font-size: 16px; /* Slightly larger font */
+  line-height: 1.9; /* Increased line height for better readability */
+  font-size: 17px; /* Larger font for better legibility */
+  letter-spacing: 0.01em; /* Slight letter spacing for readability */
 }
 
 /* Formatted text styling in AI responses */
 .message--bot .bubble strong {
-  font-weight: 600;
-  font-variation-settings: 'wght' 600;
+  font-weight: 650;
+  font-variation-settings: 'wght' 650;
   color: var(--text);
+  letter-spacing: 0.02em;
 }
 
 .message--bot .bubble em {
   font-style: italic;
+  font-weight: 450;
+  font-variation-settings: 'wght' 450;
 }
 
 .message--bot .bubble u {
   text-decoration: underline;
   text-decoration-color: var(--accent);
-  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 550;
+  font-variation-settings: 'wght' 550;
 }
 
 .message--bot .bubble ul,
@@ -260,29 +267,35 @@ body {
 .message--bot .bubble h1,
 .message--bot .bubble h2,
 .message--bot .bubble h3 {
-  margin: 24px 0 12px 0; /* Increased margins */
-  font-weight: 600;
-  font-variation-settings: 'wght' 600;
+  margin: 28px 0 16px 0; /* Increased margins */
+  font-weight: 650;
+  font-variation-settings: 'wght' 650;
   color: var(--text);
   line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 .message--bot .bubble h1 {
-  font-size: 24px;
+  font-size: 26px;
 }
 
 .message--bot .bubble h2 {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .message--bot .bubble h3 {
-  font-size: 18px;
+  font-size: 19px;
 }
 
 /* Add spacing between paragraphs */
 .message--bot .bubble p {
-  margin: 12px 0;
-  line-height: 1.8;
+  margin: 16px 0;
+  line-height: 1.9;
+  font-size: 17px;
 }
 
 .meta {
@@ -501,6 +514,29 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  /* Custom scrollbar for sources menu */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 117, 125, 0.3) transparent;
+}
+
+.sources-menu__content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sources-menu__content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.sources-menu__content::-webkit-scrollbar-thumb {
+  background: rgba(108, 117, 125, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.sources-menu__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 117, 125, 0.5);
 }
 
 .source-item {
@@ -508,11 +544,23 @@ body {
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--text);
   word-break: break-word;
   transition: all 0.2s ease;
+}
+
+.source-item__number {
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
 }
 
 .source-item--highlighted {
@@ -528,12 +576,28 @@ body {
   text-decoration: none;
   display: block;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
   word-break: break-all;
+  line-height: 1.5;
 }
 
 .source-item__url:hover {
   text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+/* Source separator for multiple question responses */
+.source-separator {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+}
+
+.source-separator__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+  margin: 0 8px;
 }
 
 /* Citation number styling in messages */

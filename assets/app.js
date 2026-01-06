@@ -188,7 +188,7 @@ function replaceTyping(node, finalText, citations = []) {
   bubble.innerHTML = processedText;
   
   // Add hover event listeners to citation numbers
-  setupCitationHovers(bubble, citations);
+  setupCitationHovers(bubble, citations, node);
 }
 
 // Format text with markdown-like formatting (bold, underline, lists, etc.)
@@ -328,14 +328,14 @@ function addCitationNumbers(text, citations) {
   return processedParagraphs.join('<br><br>');
 }
 
-function setupCitationHovers(bubbleElement, citations) {
+function setupCitationHovers(bubbleElement, citations, messageNode = null) {
   const citationNumbers = bubbleElement.querySelectorAll('.citation-number');
   
   citationNumbers.forEach(citationEl => {
     const citationIndex = parseInt(citationEl.getAttribute('data-citation'));
     
     citationEl.addEventListener('mouseenter', () => {
-      highlightSource(citationIndex);
+      highlightSource(citationIndex, messageNode);
     });
     
     citationEl.addEventListener('mouseleave', () => {
@@ -344,10 +344,27 @@ function setupCitationHovers(bubbleElement, citations) {
   });
 }
 
-function highlightSource(index) {
+// Store citation mappings for each message to map local citation indices to global source indices
+const citationMappings = new Map();
+
+function highlightSource(index, messageNode = null) {
   const sourceItems = sourcesContentEl.querySelectorAll('.source-item');
-  sourceItems.forEach((item, idx) => {
-    if (idx === index) {
+  
+  // If we have a message node, try to find the mapping for this specific message
+  if (messageNode) {
+    const messageId = messageNode.getAttribute('data-message-id');
+    if (messageId && citationMappings.has(messageId)) {
+      const mapping = citationMappings.get(messageId);
+      if (mapping[index] !== undefined) {
+        // Use the mapped global index
+        index = mapping[index];
+      }
+    }
+  }
+  
+  sourceItems.forEach((item) => {
+    const itemIndex = parseInt(item.getAttribute('data-source-index'));
+    if (itemIndex === index) {
       item.classList.add('source-item--highlighted');
       // Scroll into view if needed
       item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -493,7 +510,7 @@ async function simulateAiTyping(typingNode, fullText, citations = []) {
       if (currentChars >= totalChars) {
         clearInterval(typeInterval);
         bubble.innerHTML = processedTextWithCitations;
-        setupCitationHovers(bubble, citations);
+        setupCitationHovers(bubble, citations, typingNode);
         resolve(); // Resolve when typing is complete
       } else {
         // Show partial content - simplified progressive display
@@ -507,7 +524,7 @@ async function simulateAiTyping(typingNode, fullText, citations = []) {
     setTimeout(() => {
       clearInterval(typeInterval);
       bubble.innerHTML = processedTextWithCitations;
-      setupCitationHovers(bubble, citations);
+      setupCitationHovers(bubble, citations, typingNode);
       resolve(); // Resolve when typing is complete
     }, typingDuration);
   });
@@ -532,8 +549,11 @@ formEl.addEventListener('submit', async (e) => {
 
   const typing = addTyping();
   
-  // Show sources menu immediately while AI is typing
-  showSources([]);
+  // Show sources menu immediately while AI is typing (don't clear existing sources)
+  // Only show empty state if this is the first question
+  if (sourcesContentEl.children.length === 0) {
+    showSources([]);
+  }
   
   try {
     const response = await getPerplexityResponse(userQuery);
@@ -542,7 +562,8 @@ formEl.addEventListener('submit', async (e) => {
     const citationMarkers = response.citationMarkers || null;
     
     // Show sources menu as soon as we get the response (while typing)
-    showSources(citations);
+    // Append new sources instead of replacing
+    showSources(citations, true, typing);
     
     // Simulate typing animation with citations
     await simulateAiTyping(typing, reply, citations);
@@ -583,6 +604,10 @@ clearBtn.addEventListener('click', () => {
   conversationHistory = []; // Reset conversation history
   hideSuggestions(); // Hide suggestions when clearing
   hideSources(); // Hide sources when clearing
+  allSources = []; // Reset sources tracking
+  sourceCounter = 0; // Reset source counter
+  sourcesContentEl.innerHTML = ''; // Clear sources content
+  citationMappings.clear(); // Clear citation mappings
   updateComposerPosition();
   addEmptyHintIfNeeded();
   inputEl.focus();
@@ -776,27 +801,78 @@ function showInlineSuggestions(userQuery, aiResponse, messageNode) {
   });
 }
 
-// Sources functionality
-function showSources(citations) {
-  sourcesContentEl.innerHTML = '';
+// Track all sources across multiple questions
+let allSources = [];
+let sourceCounter = 0;
+
+// Sources functionality - now accumulates sources instead of replacing
+function showSources(citations, append = false, messageNode = null) {
+  // If not appending, clear existing sources (only when explicitly clearing)
+  if (!append) {
+    // Only clear if there are no citations (empty response)
+    if (!citations || citations.length === 0) {
+      sourcesContentEl.innerHTML = '';
+      const noSources = document.createElement('div');
+      noSources.className = 'source-item';
+      noSources.textContent = t('no-sources');
+      sourcesContentEl.appendChild(noSources);
+      // Show the menu with smooth slide animation
+      sourcesMenuEl.classList.add('sources-menu--visible');
+      return;
+    }
+  }
   
-  console.log('Showing sources:', citations);
+  // Remove "no sources" message if it exists
+  const noSourcesMsg = sourcesContentEl.querySelector('.source-item:only-child');
+  if (noSourcesMsg && noSourcesMsg.textContent === t('no-sources')) {
+    noSourcesMsg.remove();
+  }
   
-  if (!citations || citations.length === 0) {
-    const noSources = document.createElement('div');
-    noSources.className = 'source-item';
-    noSources.textContent = t('no-sources');
-    sourcesContentEl.appendChild(noSources);
-  } else {
-    citations.forEach((source, index) => {
+  console.log('Showing sources:', citations, 'append:', append);
+  
+  if (citations && citations.length > 0) {
+    // Create mapping from local citation index to global source index for this message
+    const citationMapping = {};
+    let mappingCreated = false;
+    
+    // Add a separator if appending to existing sources
+    if (append && sourcesContentEl.children.length > 0) {
+      const separator = document.createElement('div');
+      separator.className = 'source-separator';
+      separator.innerHTML = '<div class="source-separator__line"></div>';
+      sourcesContentEl.appendChild(separator);
+    }
+    
+    citations.forEach((source, localIndex) => {
+      // Check if source already exists to avoid duplicates
+      const existingSources = Array.from(sourcesContentEl.querySelectorAll('.source-item__url'));
+      const existingItem = Array.from(sourcesContentEl.querySelectorAll('.source-item')).find(
+        item => item.querySelector('.source-item__url')?.href === source
+      );
+      
+      if (existingItem) {
+        // Source already exists - map to existing global index
+        const existingIndex = parseInt(existingItem.getAttribute('data-source-index'));
+        citationMapping[localIndex] = existingIndex;
+        mappingCreated = true;
+        return; // Skip adding duplicate
+      }
+      
+      // New source - add it
       const item = document.createElement('div');
       item.className = 'source-item';
-      item.setAttribute('data-source-index', index);
+      sourceCounter++;
+      const currentSourceNum = sourceCounter;
+      const globalIndex = currentSourceNum - 1;
+      item.setAttribute('data-source-index', globalIndex);
+      
+      // Map local index to global index
+      citationMapping[localIndex] = globalIndex;
+      mappingCreated = true;
       
       const sourceNum = document.createElement('div');
-      sourceNum.style.fontWeight = '600';
-      sourceNum.style.marginBottom = '4px';
-      sourceNum.textContent = `${t('source')} ${index + 1}`;
+      sourceNum.className = 'source-item__number';
+      sourceNum.textContent = `${t('source')} ${currentSourceNum}`;
       
       const url = document.createElement('a');
       url.className = 'source-item__url';
@@ -808,6 +884,22 @@ function showSources(citations) {
       item.appendChild(sourceNum);
       item.appendChild(url);
       sourcesContentEl.appendChild(item);
+      
+      // Add to tracking array
+      allSources.push(source);
+    });
+    
+    // Store citation mapping for this message if we have a message node
+    if (messageNode && mappingCreated) {
+      const messageId = messageNode.getAttribute('data-message-id') || 
+                       `msg-${Date.now()}-${Math.random()}`;
+      messageNode.setAttribute('data-message-id', messageId);
+      citationMappings.set(messageId, citationMapping);
+    }
+    
+    // Scroll to bottom of sources menu to show new sources
+    requestAnimationFrame(() => {
+      sourcesContentEl.scrollTo({ top: sourcesContentEl.scrollHeight, behavior: 'smooth' });
     });
   }
   
