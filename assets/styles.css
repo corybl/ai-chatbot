@@ -221,25 +221,28 @@ body {
   letter-spacing: 0.01em; /* Slight letter spacing for readability */
 }
 
-/* Formatted text styling in AI responses - minimal, like Perplexity */
+/* Formatted text styling in AI responses - enhanced like Perplexity */
 .message--bot .bubble strong {
-  font-weight: 600;
-  font-variation-settings: 'wght' 600;
+  font-weight: 650;
+  font-variation-settings: 'wght' 650;
   color: var(--text);
-  /* No extra letter spacing - keep it subtle */
+  letter-spacing: 0.01em;
 }
 
 .message--bot .bubble em {
   font-style: italic;
-  /* Keep normal weight for italics */
+  font-weight: 450;
+  font-variation-settings: 'wght' 450;
+  color: var(--text);
 }
 
 .message--bot .bubble u {
   text-decoration: underline;
   text-decoration-color: var(--accent);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 2px;
-  /* Keep normal weight for underlines */
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 550;
+  font-variation-settings: 'wght' 550;
 }
 
 .message--bot .bubble ul,
@@ -265,31 +268,54 @@ body {
 .message--bot .bubble h1,
 .message--bot .bubble h2,
 .message--bot .bubble h3 {
-  margin: 24px 0 12px 0;
-  font-weight: 600;
-  font-variation-settings: 'wght' 600;
+  margin: 32px 0 16px 0;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700;
   color: var(--text);
-  line-height: 1.4;
-  /* Remove underline from headers - too much styling */
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 .message--bot .bubble h1 {
-  font-size: 24px;
+  font-size: 28px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
 }
 
 .message--bot .bubble h2 {
-  font-size: 20px;
+  font-size: 22px;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 .message--bot .bubble h3 {
-  font-size: 18px;
+  font-size: 19px;
+  font-weight: 650;
+  font-variation-settings: 'wght' 650;
 }
 
 /* Add spacing between paragraphs */
 .message--bot .bubble p {
-  margin: 16px 0;
+  margin: 18px 0;
   line-height: 1.9;
   font-size: 17px;
+}
+
+/* Style first paragraph differently (like Perplexity) */
+.message--bot .bubble p:first-of-type {
+  font-size: 18px;
+  line-height: 1.85;
+  margin-top: 0;
+}
+
+/* Style paragraphs with emphasis */
+.message--bot .bubble p strong:first-child {
+  font-size: 18px;
+  display: block;
+  margin-bottom: 8px;
 }
 
 .meta {
@@ -626,6 +652,7 @@ body {
 /* Inline Suggestions (below AI responses) */
 .message--bot .inline-suggestions {
   margin-top: 24px; /* Increased top margin */
+  margin-bottom: 100px; /* Add space below to avoid blocking by floating input */
   padding-top: 20px; /* Increased padding */
   border-top: 1px solid var(--border);
   width: 100%;
