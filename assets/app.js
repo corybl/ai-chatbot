@@ -190,6 +190,9 @@ function replaceTyping(node, finalText, citations = []) {
   const formattedText = formatText(processedText);
   bubble.innerHTML = formattedText;
   
+  // Post-process: sweep for any missed formatting (hashtags, asterisks)
+  postProcessFormatting(bubble);
+  
   // Add hover event listeners to citation numbers
   setupCitationHovers(bubble, citations, node);
 }
@@ -279,6 +282,60 @@ function formatText(text) {
   formatted = formatted.replace(/\n/g, '<br>');
   
   return formatted;
+}
+
+// Post-process formatting: sweep for any missed hashtags or asterisks
+// This catches formatting that might have been missed in the initial processing
+function postProcessFormatting(bubbleElement) {
+  if (!bubbleElement) return;
+  
+  // Get the HTML content
+  let html = bubbleElement.innerHTML;
+  
+  // Process triple hashtags (###) - make text larger and bold
+  // Look for ### followed by space and text
+  // Match ### that appears in text content (not inside HTML tags)
+  html = html.replace(/###\s+([^<]+?)(?=<|$|###)/g, (match, text) => {
+    // Skip if this appears to be inside an HTML tag
+    if (match.includes('<') && !match.includes('>')) {
+      return match;
+    }
+    
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      // Create h3 with larger font and bold
+      return `<h3 style="font-size: 1.3em; font-weight: 700;">${trimmed}</h3>`;
+    }
+    return match;
+  });
+  
+  // Process double asterisks (**text**) - make text bold
+  // Look for **text** patterns that weren't already converted
+  html = html.replace(/\*\*([^*\n]+?)\*\*/g, (match, text, offset, fullString) => {
+    // Check if we're inside an HTML tag by looking at what comes before
+    const beforeMatch = fullString.substring(0, offset);
+    const lastOpenTag = beforeMatch.lastIndexOf('<');
+    const lastCloseTag = beforeMatch.lastIndexOf('>');
+    
+    // If we're inside a tag (last < is after last >), skip it
+    if (lastOpenTag > lastCloseTag) {
+      return match;
+    }
+    
+    // Skip if already converted to <strong>
+    if (beforeMatch.includes('<strong>') && fullString.substring(offset).includes('</strong>')) {
+      return match;
+    }
+    
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      return `<strong>${trimmed}</strong>`;
+    }
+    return match;
+  });
+  
+  // Update the HTML
+  bubbleElement.innerHTML = html;
 }
 
 // Apply inline formatting (bold, italic, underline) to text
@@ -593,6 +650,8 @@ async function simulateAiTyping(typingNode, fullText, citations = []) {
       if (currentChars >= totalChars) {
         clearInterval(typeInterval);
         bubble.innerHTML = processedTextWithCitations;
+        // Post-process: sweep for any missed formatting
+        postProcessFormatting(bubble);
         setupCitationHovers(bubble, citations, typingNode);
         resolve(); // Resolve when typing is complete
       } else {
@@ -607,6 +666,8 @@ async function simulateAiTyping(typingNode, fullText, citations = []) {
     setTimeout(() => {
       clearInterval(typeInterval);
       bubble.innerHTML = processedTextWithCitations;
+      // Post-process: sweep for any missed formatting
+      postProcessFormatting(bubble);
       setupCitationHovers(bubble, citations, typingNode);
       resolve(); // Resolve when typing is complete
     }, typingDuration);
