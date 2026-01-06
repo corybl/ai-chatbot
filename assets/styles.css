@@ -301,125 +301,126 @@ body {
 .composer {
   position: fixed;
   left: 50%;
-  padding: 20px 16px;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transform: translateX(-50%);
   width: 100%;
-  max-width: 700px;
+  max-width: 768px; /* Perplexity-style width */
   display: flex;
   justify-content: center;
-  transition: bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
-              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-              border-radius 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              border 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: bottom 0.3s ease;
   z-index: 100; /* Above sources menu */
+  padding: 0 16px;
+  pointer-events: none; /* Allow clicks to pass through container */
 }
-
-/* Composer stays centered regardless of sources menu */
 
 /* Centered position when no messages */
 .composer.composer--centered {
   bottom: 50%;
   transform: translate(-50%, 50%);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  border: 1px solid var(--border);
-  background: #ffffff;
 }
 
 /* Floating bottom position when first message is added */
 .composer.composer--bottom {
-  bottom: 20px;
+  bottom: 24px;
   transform: translateX(-50%);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  border: 1px solid var(--border);
-  background: #ffffff;
 }
 
-/* When at bottom with messages, make it look more like a footer */
+/* When at bottom with messages, make it float (no bar on top) */
 .composer.composer--bottom.has-messages {
   position: fixed;
-  bottom: 0;
+  bottom: 24px;
   transform: translateX(-50%);
-  max-width: 100%;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
-  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.95) 30%, #ffffff);
-  padding: 20px 16px;
-}
-
-/* Use sticky only when scrolled to bottom for better UX */
-@media (min-width: 701px) {
-  .composer.composer--bottom.has-messages {
-    position: sticky;
-    left: auto;
-    transform: none;
-  }
+  padding: 0 16px;
+  background: transparent;
+  border: none;
+  pointer-events: none;
 }
 
 .composer form {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
-  align-items: end;
-  max-width: 700px;
+  pointer-events: auto; /* Re-enable clicks on form */
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
+  max-width: 640px; /* Perplexity-style: takes ~83% of max-width */
   margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px; /* Perplexity uses smaller border radius */
+  padding: 8px 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.composer form:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
 }
 
 .composer__input {
   resize: none;
-  background: #ffffff;
+  background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 14px 20px;
+  border: none;
   outline: none;
-  min-height: 52px;
-  max-height: 160px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  width: 100%;
+  flex: 1;
+  min-height: 24px;
+  max-height: 200px;
+  padding: 8px 4px;
   font-size: 15px;
-  line-height: 1.45;
+  line-height: 1.5;
   font-family: 'Science Gothic', system-ui, -apple-system, sans-serif;
   font-variation-settings: 'wght' 400, 'wdth' 100, 'CTRS' 0, 'slnt' 0;
-  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-.composer__input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+.composer__input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
 }
 
-.composer__send, .composer__action {
-  height: 52px;
-  padding: 0 20px;
-  border-radius: 24px;
-  border: 1px solid var(--accent);
+.composer__send {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
   background: var(--accent);
   color: #ffffff;
-  font-weight: 600;
-  font-variation-settings: 'wght' 600;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
-  font-size: 15px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.composer__send:hover:not(:disabled) {
+  background: #0b5ed7;
+}
+
+.composer__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .composer__action {
-  width: 52px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.composer__action:hover {
+  background: var(--panel);
+  color: var(--text);
 }
 
 .composer__send:hover:not(:disabled), .composer__action:hover:not(:disabled) {

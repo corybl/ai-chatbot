@@ -201,10 +201,6 @@ function formatText(text) {
   
   let formatted = text;
   
-  // First, escape standalone # characters that aren't part of headers
-  // Replace standalone # (not followed by space or at start of line) with plain text
-  formatted = formatted.replace(/(?<!^)#(?!\s|#)/g, '#');
-  
   // Split by double newlines to preserve paragraphs
   const paragraphs = formatted.split(/\n\n+/);
   
@@ -235,10 +231,21 @@ function formatText(text) {
     }
     // Regular paragraph - apply inline formatting
     else {
-      // Clean up any stray # characters that weren't part of headers
-      processed = processed.replace(/^#+$/, ''); // Remove lines that are only # characters
+      // Remove any citation markers that might have been left in
+      processed = processed.replace(/\[\d+\]/g, '');
+      
+      // Remove lines that are only # characters (common formatting artifact)
+      const lines = processed.split('\n');
+      const cleanedLines = lines.filter(line => {
+        const trimmed = line.trim();
+        return trimmed && !/^#+\s*$/.test(trimmed);
+      });
+      processed = cleanedLines.join('\n').trim();
+      
       if (processed) {
         processed = applyInlineFormatting(processed);
+      } else {
+        return ''; // Skip empty paragraphs
       }
     }
     
