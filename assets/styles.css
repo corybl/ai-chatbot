@@ -1,0 +1,613 @@
+/* Science Gothic Font Face Definitions */
+/* Science Gothic is a free open-source variable font from Google Fonts */
+@font-face {
+  font-family: 'Science Gothic';
+  src: url('fonts/ScienceGothic-Variable.woff2') format('woff2'),
+       url('fonts/ScienceGothic-Variable.ttf') format('truetype');
+  font-weight: 100 900; /* Variable font weight range */
+  font-stretch: 50% 200%; /* Variable font width range */
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #ffffff;
+  --panel: #f8f9fa;
+  --muted: #6c757d;
+  --text: #212529;
+  --accent: #0d6efd;
+  --user: #0d6efd;
+  --bot: #e9ecef;
+  --border: #dee2e6;
+  --success: #198754;
+}
+
+* { box-sizing: border-box; }
+
+html, body, .app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  color: var(--text);
+  font-family: 'Science Gothic', system-ui, -apple-system, sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'CTRS' 0, 'slnt' 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow-x: hidden; /* Prevent horizontal scroll when menu slides in */
+}
+
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.app__title {
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  letter-spacing: 0.2px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.language-selector,
+.region-selector {
+  display: flex;
+  align-items: center;
+}
+
+.language-selector select,
+.region-selector select {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  font-family: 'Science Gothic', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.language-selector select:hover,
+.region-selector select:hover {
+  border-color: var(--accent);
+}
+
+.language-selector select:focus,
+.region-selector select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.chat {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px 20px 24px; /* Increased horizontal padding */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  /* Firefox scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 117, 125, 0.3) transparent;
+  /* Ensure chat doesn't overlap with sources menu */
+  position: relative;
+  z-index: 1;
+}
+
+/* Custom Scrollbar Styling */
+.chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.chat::-webkit-scrollbar-thumb {
+  background: rgba(108, 117, 125, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.chat::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 117, 125, 0.5);
+}
+
+/* Firefox scrollbar styling - applied in .chat selector above */
+
+.message {
+  display: flex;
+  flex-direction: column; /* Changed to column to allow suggestions below */
+  align-items: flex-start;
+  width: 100%;
+  max-width: 800px; /* Increased from 600px for better readability */
+  margin: 10px 0;
+  gap: 12px;
+  padding: 0 20px; /* Add horizontal padding */
+}
+
+.message__content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  gap: 12px;
+}
+
+.message--user {
+  margin-bottom: 40px; /* Add space after user message for AI response */
+}
+
+.message--user .message__content {
+  flex-direction: row-reverse; /* Avatar on right, bubble on left */
+}
+
+.message--bot .message__content {
+  flex-direction: row; /* Avatar on left, bubble on right */
+}
+
+.avatar {
+  height: 36px;
+  width: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  background: #6c757d;
+  color: #ffffff;
+  user-select: none;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bubble {
+  flex: 1;
+  max-width: calc(100% - 48px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  line-height: 1.45;
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+}
+
+/* Only user messages have speech bubble styling */
+.message--user .bubble {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: var(--text);
+}
+
+/* Bot messages - no bubble, just plain text */
+.message--bot .bubble {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 16px 0; /* Increased vertical padding */
+  border-radius: 0;
+  line-height: 1.8; /* Increased line height for better readability */
+  font-size: 16px; /* Slightly larger font */
+}
+
+/* Formatted text styling in AI responses */
+.message--bot .bubble strong {
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  color: var(--text);
+}
+
+.message--bot .bubble em {
+  font-style: italic;
+}
+
+.message--bot .bubble u {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+.message--bot .bubble ul,
+.message--bot .bubble ol {
+  margin: 16px 0; /* Increased margin */
+  padding-left: 28px; /* Increased padding */
+  list-style-position: outside;
+}
+
+.message--bot .bubble ul {
+  list-style-type: disc;
+}
+
+.message--bot .bubble ol {
+  list-style-type: decimal;
+}
+
+.message--bot .bubble li {
+  margin: 10px 0; /* Increased margin between list items */
+  line-height: 1.8; /* Match paragraph line height */
+}
+
+.message--bot .bubble h1,
+.message--bot .bubble h2,
+.message--bot .bubble h3 {
+  margin: 24px 0 12px 0; /* Increased margins */
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.message--bot .bubble h1 {
+  font-size: 24px;
+}
+
+.message--bot .bubble h2 {
+  font-size: 20px;
+}
+
+.message--bot .bubble h3 {
+  font-size: 18px;
+}
+
+/* Add spacing between paragraphs */
+.message--bot .bubble p {
+  margin: 12px 0;
+  line-height: 1.8;
+}
+
+.meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.composer {
+  position: fixed;
+  left: 50%;
+  padding: 20px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  justify-content: center;
+  transition: bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              border 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+}
+
+/* Centered position when no messages */
+.composer.composer--centered {
+  bottom: 50%;
+  transform: translate(-50%, 50%);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+/* Floating bottom position when first message is added */
+.composer.composer--bottom {
+  bottom: 20px;
+  transform: translateX(-50%);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border: 1px solid var(--border);
+  background: #ffffff;
+}
+
+/* When at bottom with messages, make it look more like a footer */
+.composer.composer--bottom.has-messages {
+  position: fixed;
+  bottom: 0;
+  transform: translateX(-50%);
+  max-width: 100%;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.95) 30%, #ffffff);
+  padding: 20px 16px;
+}
+
+/* Use sticky only when scrolled to bottom for better UX */
+@media (min-width: 701px) {
+  .composer.composer--bottom.has-messages {
+    position: sticky;
+    left: auto;
+    transform: none;
+  }
+}
+
+.composer form {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: end;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.composer__input {
+  resize: none;
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 14px 20px;
+  outline: none;
+  min-height: 52px;
+  max-height: 160px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  width: 100%;
+  font-size: 15px;
+  line-height: 1.45;
+  font-family: 'Science Gothic', system-ui, -apple-system, sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 100, 'CTRS' 0, 'slnt' 0;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.composer__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.composer__send, .composer__action {
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 24px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+  font-size: 15px;
+}
+
+.composer__action {
+  width: 52px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.composer__send:hover:not(:disabled), .composer__action:hover:not(:disabled) {
+  background: #0b5ed7;
+  border-color: #0b5ed7;
+  transform: translateY(-1px);
+}
+
+.composer__send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.typing {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background: #6c757d;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: blink 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+
+.empty-hint {
+  text-align: center;
+  margin-top: 8vh;
+  color: var(--muted);
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.empty-hint b { color: #495057; }
+
+/* Sources Menu (Left Side) */
+.sources-menu {
+  position: fixed;
+  top: 0;
+  left: -400px;
+  width: 380px;
+  height: 100vh;
+  background: #f5f5f5;
+  border-right: 2px solid var(--accent);
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  z-index: 100; /* Ensure menu is above chat content */
+  z-index: 90;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sources-menu.sources-menu--visible {
+  left: 0;
+}
+
+.sources-menu__header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  background: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sources-menu__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  color: var(--text);
+}
+
+.sources-menu__content {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.source-item {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  word-break: break-word;
+  transition: all 0.2s ease;
+}
+
+.source-item--highlighted {
+  background: #e7f1ff;
+  border-color: var(--accent);
+  border-width: 2px;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+  transform: translateX(4px);
+}
+
+.source-item__url {
+  color: var(--accent);
+  text-decoration: none;
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.source-item__url:hover {
+  text-decoration: underline;
+}
+
+/* Citation number styling in messages */
+.citation-number {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85em;
+  margin-left: 2px;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.citation-number:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+  text-decoration: underline;
+}
+
+/* Inline Suggestions (below AI responses) */
+.message--bot .inline-suggestions {
+  margin-top: 24px; /* Increased top margin */
+  padding-top: 20px; /* Increased padding */
+  border-top: 1px solid var(--border);
+  width: 100%;
+  max-width: 100%; /* Ensure full width within message container */
+  margin-left: 0; /* Remove left margin - suggestions should be full width */
+  padding-left: 0; /* Remove left padding */
+  /* Align with bubble content (account for avatar + gap) */
+  padding-left: 48px; /* Avatar width (36px) + gap (12px) */
+}
+
+.inline-suggestions__title {
+  font-size: 13px;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inline-suggestions__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inline-suggestion-item {
+  padding: 8px 14px;
+  background: #f8f9fa;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  text-align: left;
+  font-family: 'Science Gothic', system-ui, -apple-system, sans-serif;
+  white-space: nowrap;
+}
+
+.inline-suggestion-item:hover {
+  background: #e9ecef;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.inline-suggestion-item:active {
+  transform: translateY(0);
+}
+
+/* Adjust layout when menu is visible - handled by app container */
+
+
