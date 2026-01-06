@@ -141,6 +141,9 @@ function updateComposerPosition() {
     composerEl.classList.remove('composer--centered');
     composerEl.classList.add('composer--bottom', 'has-messages');
   }
+  
+  // Update sources menu position based on composer state
+  updateSourcesMenuPosition();
 }
 
 function addEmptyHintIfNeeded() {
@@ -180,12 +183,12 @@ function replaceTyping(node, finalText, citations = []) {
   const bubble = node.querySelector('.bubble');
   bubble.innerHTML = '';
   
-  // Format text with markdown-like formatting
-  const formattedText = formatText(finalText);
+  // Process text to add citation numbers (needs original text to parse markers)
+  const processedText = addCitationNumbers(finalText, citations);
   
-  // Process text to add citation numbers
-  const processedText = addCitationNumbers(formattedText, citations);
-  bubble.innerHTML = processedText;
+  // Format text with markdown-like formatting (after citation processing)
+  const formattedText = formatText(processedText);
+  bubble.innerHTML = formattedText;
   
   // Add hover event listeners to citation numbers
   setupCitationHovers(bubble, citations, node);
@@ -326,41 +329,70 @@ function applyInlineFormatting(text) {
 
 function addCitationNumbers(text, citations) {
   if (!citations || citations.length === 0) {
-    return text; // Text is already formatted with HTML, don't add extra <br> tags
+    return text;
   }
   
-  // First, remove any existing citation markers from the text
+  // Extract citation markers [1], [2], etc. from the original text
+  const citationMarkerRegex = /\[(\d+)\]/g;
+  const citationMarkers = [];
+  let match;
+  const originalText = text;
+  
+  // Find all citation markers and their positions in the original text
+  while ((match = citationMarkerRegex.exec(originalText)) !== null) {
+    citationMarkers.push({
+      index: match.index,
+      number: parseInt(match[1]),
+      fullMatch: match[0]
+    });
+  }
+  
+  // Remove citation markers from text (they'll be replaced with superscripts at paragraph ends)
   let cleanedText = text.replace(/\[\d+\]/g, '');
   
-  // Split text into paragraphs (by double newlines or single newlines that create breaks)
+  // Split text into paragraphs by double newlines (before HTML formatting)
   const paragraphs = cleanedText.split(/\n\n+/).filter(p => p.trim().length > 0);
   
-  // Process each paragraph to add citation numbers at the end
-  const processedParagraphs = paragraphs.map((paragraph, paraIndex) => {
-    const trimmedPara = paragraph.trim();
-    
-    // Assign citations to paragraphs - distribute them evenly
-    // Each paragraph gets at least one citation, cycling through available sources
-    const citationsPerPara = Math.ceil(citations.length / paragraphs.length);
-    const startIndex = paraIndex * citationsPerPara;
-    const endIndex = Math.min(startIndex + citationsPerPara, citations.length);
-    
-    // Get citations for this paragraph
-    const paraCitations = [];
-    for (let i = startIndex; i < endIndex && i < citations.length; i++) {
-      paraCitations.push(i);
+  // Build a map of which paragraph each citation marker belongs to
+  // by tracking character positions
+  const paragraphBoundaries = [];
+  let currentPos = 0;
+  paragraphs.forEach((para, idx) => {
+    const start = currentPos;
+    const end = start + para.length;
+    paragraphBoundaries.push({ start, end, index: idx });
+    currentPos = end + 2; // +2 for \n\n separator
+  });
+  
+  // Map citation markers to paragraphs
+  const paragraphCitations = paragraphs.map(() => new Set());
+  
+  citationMarkers.forEach(marker => {
+    // Find which paragraph this marker belongs to
+    for (let i = 0; i < paragraphBoundaries.length; i++) {
+      const boundary = paragraphBoundaries[i];
+      // Check if marker is in this paragraph's range
+      // Account for slight offsets due to marker removal
+      if (marker.index >= boundary.start - 5 && marker.index <= boundary.end + 5) {
+        const citationIndex = marker.number - 1; // Convert [1] to index 0
+        if (citationIndex >= 0 && citationIndex < citations.length) {
+          paragraphCitations[i].add(citationIndex);
+          break; // Found the paragraph, move to next marker
+        }
+      }
     }
+  });
+  
+  // Process each paragraph and add citations at the end
+  const processedParagraphs = paragraphs.map((para, paraIndex) => {
+    const trimmedPara = para.trim();
+    if (!trimmedPara) return '';
     
-    // If no citations assigned, use modulo to ensure every paragraph has at least one
-    if (paraCitations.length === 0 && citations.length > 0) {
-      paraCitations.push(paraIndex % citations.length);
-    }
-    
-    // Remove duplicates and sort
-    const uniqueCitations = [...new Set(paraCitations)].sort((a, b) => a - b);
+    // Get citations for this paragraph (convert Set to sorted array)
+    const paraCitations = Array.from(paragraphCitations[paraIndex]).sort((a, b) => a - b);
     
     // Add citation numbers at the end of the paragraph
-    const citationNumbers = uniqueCitations.map(citationIndex => {
+    const citationNumbers = paraCitations.map(citationIndex => {
       const citationNum = citationIndex + 1;
       return `<sup class="citation-number" data-citation="${citationIndex}">${citationNum}</sup>`;
     }).join(' ');
@@ -368,7 +400,8 @@ function addCitationNumbers(text, citations) {
     return trimmedPara + (citationNumbers ? ` ${citationNumbers}` : '');
   });
   
-  return processedParagraphs.join('<br><br>');
+  // Join paragraphs with double newlines (formatText will convert these to <br><br>)
+  return processedParagraphs.join('\n\n');
 }
 
 function setupCitationHovers(bubbleElement, citations, messageNode = null) {
@@ -529,11 +562,11 @@ async function simulateAiTyping(typingNode, fullText, citations = []) {
   const bubble = typingNode.querySelector('.bubble');
   bubble.innerHTML = '';
   
-  // Format the text first (bold, underline, lists, etc.)
-  const formattedText = formatText(fullText);
+  // Add citation numbers first (needs original text to parse markers)
+  const textWithCitations = addCitationNumbers(fullText, citations);
   
-  // Then add citation numbers
-  const processedTextWithCitations = addCitationNumbers(formattedText, citations);
+  // Then format the text (bold, underline, lists, etc.)
+  const processedTextWithCitations = formatText(textWithCitations);
   
   // Extract plain text for character counting
   const tempDiv = document.createElement('div');
@@ -848,13 +881,17 @@ function showInlineSuggestions(userQuery, aiResponse, messageNode) {
 let allSources = [];
 let sourceCounter = 0;
 
-// Update composer position based on sources menu visibility
-function updateComposerForSources() {
-  const isSourcesVisible = sourcesMenuEl.classList.contains('sources-menu--visible');
-  if (isSourcesVisible) {
-    composerEl.classList.add('composer--sources-visible');
+// Update sources menu bottom position based on composer state
+function updateSourcesMenuPosition() {
+  const isComposerFooter = composerEl.classList.contains('composer--bottom') && 
+                           composerEl.classList.contains('has-messages');
+  
+  if (isComposerFooter) {
+    sourcesMenuEl.classList.remove('sources-menu--composer-floating');
+    sourcesMenuEl.classList.add('sources-menu--composer-footer');
   } else {
-    composerEl.classList.remove('composer--sources-visible');
+    sourcesMenuEl.classList.remove('sources-menu--composer-footer');
+    sourcesMenuEl.classList.add('sources-menu--composer-floating');
   }
 }
 
@@ -871,7 +908,7 @@ function showSources(citations, append = false, messageNode = null) {
       sourcesContentEl.appendChild(noSources);
       // Show the menu with smooth slide animation
       sourcesMenuEl.classList.add('sources-menu--visible');
-      updateComposerForSources();
+      updateSourcesMenuPosition();
       return;
     }
   }
@@ -959,12 +996,11 @@ function showSources(citations, append = false, messageNode = null) {
   
   // Show the menu with smooth slide animation
   sourcesMenuEl.classList.add('sources-menu--visible');
-  updateComposerForSources();
+  updateSourcesMenuPosition();
 }
 
 function hideSources() {
   sourcesMenuEl.classList.remove('sources-menu--visible');
-  updateComposerForSources();
 }
 
 // Language selector event
@@ -993,6 +1029,7 @@ updateTranslations();
 
 // Initialize
 updateComposerPosition();
+updateSourcesMenuPosition();
 addEmptyHintIfNeeded();
 
 
