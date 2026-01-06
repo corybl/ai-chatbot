@@ -192,10 +192,15 @@ function replaceTyping(node, finalText, citations = []) {
 }
 
 // Format text with markdown-like formatting (bold, underline, lists, etc.)
+// Uses conservative styling approach - only key terms, not whole paragraphs
 function formatText(text) {
   if (!text) return '';
   
   let formatted = text;
+  
+  // First, escape standalone # characters that aren't part of headers
+  // Replace standalone # (not followed by space or at start of line) with plain text
+  formatted = formatted.replace(/(?<!^)#(?!\s|#)/g, '#');
   
   // Split by double newlines to preserve paragraphs
   const paragraphs = formatted.split(/\n\n+/);
@@ -204,7 +209,8 @@ function formatText(text) {
     let processed = para.trim();
     if (!processed) return '';
     
-    // Headers first (before other formatting)
+    // Headers first (before other formatting) - must have space after #
+    // Only process if it's a proper header format
     if (/^###\s+/.test(processed)) {
       processed = processed.replace(/^###\s+(.+)$/, '<h3>$1</h3>');
     } else if (/^##\s+/.test(processed)) {
@@ -226,7 +232,11 @@ function formatText(text) {
     }
     // Regular paragraph - apply inline formatting
     else {
-      processed = applyInlineFormatting(processed);
+      // Clean up any stray # characters that weren't part of headers
+      processed = processed.replace(/^#+$/, ''); // Remove lines that are only # characters
+      if (processed) {
+        processed = applyInlineFormatting(processed);
+      }
     }
     
     return processed;
@@ -262,21 +272,54 @@ function formatText(text) {
 }
 
 // Apply inline formatting (bold, italic, underline) to text
+// Conservative approach: only style key terms, not whole paragraphs
+// Similar to Perplexity's minimal styling approach
 function applyInlineFormatting(text) {
   let processed = text;
   
-  // Bold: **text** (greedy match to handle multiple bold sections)
-  processed = processed.replace(/\*\*([^*]+(?:\*(?!\*)[^*]*)*)\*\*/g, '<strong>$1</strong>');
-  // Bold: __text__
-  processed = processed.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  // First, protect already formatted content (HTML tags)
+  // This prevents double-processing
   
-  // Underline: ++text++ (before italic to avoid conflicts)
-  processed = processed.replace(/\+\+([^+]+)\+\+/g, '<u>$1</u>');
+  // Bold: **text** - but limit to reasonable length (max 100 chars) to avoid styling whole paragraphs
+  processed = processed.replace(/\*\*([^*]{1,100}(?:\*(?!\*)[^*]{0,100})*)\*\*/g, (match, content) => {
+    // Only apply if it's not too long (likely a key term, not a whole paragraph)
+    if (content.length <= 100) {
+      return '<strong>' + content + '</strong>';
+    }
+    return match; // Return original if too long
+  });
+  
+  // Bold: __text__ - same length limit
+  processed = processed.replace(/__([^_]{1,100})__/g, (match, content) => {
+    if (content.length <= 100) {
+      return '<strong>' + content + '</strong>';
+    }
+    return match;
+  });
+  
+  // Underline: ++text++ - only for short key terms
+  processed = processed.replace(/\+\+([^+]{1,80})\+\+/g, (match, content) => {
+    if (content.length <= 80) {
+      return '<u>' + content + '</u>';
+    }
+    return match;
+  });
   
   // Italic: *text* (only if not part of **text** or ++text++)
   // Use negative lookbehind/lookahead to avoid conflicts
-  processed = processed.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
-  processed = processed.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>');
+  // Also limit length
+  processed = processed.replace(/(?<!\*)\*([^*]{1,80})\*(?!\*)/g, (match, content) => {
+    if (content.length <= 80) {
+      return '<em>' + content + '</em>';
+    }
+    return match;
+  });
+  processed = processed.replace(/(?<!_)_([^_]{1,80})_(?!_)/g, (match, content) => {
+    if (content.length <= 80) {
+      return '<em>' + content + '</em>';
+    }
+    return match;
+  });
   
   return processed;
 }
@@ -805,6 +848,16 @@ function showInlineSuggestions(userQuery, aiResponse, messageNode) {
 let allSources = [];
 let sourceCounter = 0;
 
+// Update composer position based on sources menu visibility
+function updateComposerForSources() {
+  const isSourcesVisible = sourcesMenuEl.classList.contains('sources-menu--visible');
+  if (isSourcesVisible) {
+    composerEl.classList.add('composer--sources-visible');
+  } else {
+    composerEl.classList.remove('composer--sources-visible');
+  }
+}
+
 // Sources functionality - now accumulates sources instead of replacing
 function showSources(citations, append = false, messageNode = null) {
   // If not appending, clear existing sources (only when explicitly clearing)
@@ -818,6 +871,7 @@ function showSources(citations, append = false, messageNode = null) {
       sourcesContentEl.appendChild(noSources);
       // Show the menu with smooth slide animation
       sourcesMenuEl.classList.add('sources-menu--visible');
+      updateComposerForSources();
       return;
     }
   }
@@ -905,10 +959,12 @@ function showSources(citations, append = false, messageNode = null) {
   
   // Show the menu with smooth slide animation
   sourcesMenuEl.classList.add('sources-menu--visible');
+  updateComposerForSources();
 }
 
 function hideSources() {
   sourcesMenuEl.classList.remove('sources-menu--visible');
+  updateComposerForSources();
 }
 
 // Language selector event

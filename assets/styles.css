@@ -221,27 +221,25 @@ body {
   letter-spacing: 0.01em; /* Slight letter spacing for readability */
 }
 
-/* Formatted text styling in AI responses */
+/* Formatted text styling in AI responses - minimal, like Perplexity */
 .message--bot .bubble strong {
-  font-weight: 650;
-  font-variation-settings: 'wght' 650;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
   color: var(--text);
-  letter-spacing: 0.02em;
+  /* No extra letter spacing - keep it subtle */
 }
 
 .message--bot .bubble em {
   font-style: italic;
-  font-weight: 450;
-  font-variation-settings: 'wght' 450;
+  /* Keep normal weight for italics */
 }
 
 .message--bot .bubble u {
   text-decoration: underline;
   text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-  font-weight: 550;
-  font-variation-settings: 'wght' 550;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+  /* Keep normal weight for underlines */
 }
 
 .message--bot .bubble ul,
@@ -267,28 +265,24 @@ body {
 .message--bot .bubble h1,
 .message--bot .bubble h2,
 .message--bot .bubble h3 {
-  margin: 28px 0 16px 0; /* Increased margins */
-  font-weight: 650;
-  font-variation-settings: 'wght' 650;
+  margin: 24px 0 12px 0;
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
   color: var(--text);
   line-height: 1.4;
-  letter-spacing: 0.02em;
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  /* Remove underline from headers - too much styling */
 }
 
 .message--bot .bubble h1 {
-  font-size: 26px;
+  font-size: 24px;
 }
 
 .message--bot .bubble h2 {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .message--bot .bubble h3 {
-  font-size: 19px;
+  font-size: 18px;
 }
 
 /* Add spacing between paragraphs */
@@ -318,11 +312,45 @@ body {
   justify-content: center;
   transition: bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
               transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               border-radius 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               border 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 100;
+  z-index: 100; /* Above sources menu */
+}
+
+/* Adjust composer position when sources menu is visible - handled by JS */
+.composer.composer--sources-visible.composer--centered {
+  left: calc(50% + 190px);
+  transform: translate(-50%, 50%);
+  max-width: calc(700px - 190px);
+}
+
+.composer.composer--sources-visible.composer--bottom:not(.has-messages) {
+  left: calc(50% + 190px);
+  transform: translateX(-50%);
+  max-width: calc(700px - 190px);
+}
+
+.composer.composer--sources-visible.composer--bottom.has-messages {
+  left: calc(50% + 190px);
+  transform: translateX(-50%);
+  max-width: calc(100% - 400px);
+}
+
+/* On smaller screens, adjust more aggressively */
+@media (max-width: 1200px) {
+  .composer.composer--sources-visible {
+    max-width: calc(100vw - 400px);
+  }
+}
+
+@media (max-width: 900px) {
+  .composer.composer--sources-visible {
+    max-width: calc(100vw - 400px);
+  }
 }
 
 /* Centered position when no messages */
@@ -479,8 +507,7 @@ body {
   background: #f5f5f5;
   border-right: 2px solid var(--accent);
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-  z-index: 100; /* Ensure menu is above chat content */
-  z-index: 90;
+  z-index: 90; /* Below composer but above chat content */
   transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
   display: flex;
@@ -557,10 +584,7 @@ body {
   margin-bottom: 6px;
   font-size: 14px;
   color: var(--text);
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 2px;
+  /* Remove underline - too much styling */
 }
 
 .source-item--highlighted {
