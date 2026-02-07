@@ -243,12 +243,21 @@ function filterCitationsByRegion(citations, region) {
         if (host === d || host.endsWith('.' + d) || host.includes(d)) {
           return entry;
         }
+        // If the trusted entry specifies a full URL prefix, match if the citation starts with that URL
+        if (entry.url) {
+          try {
+            const prefix = entry.url.toLowerCase();
+            if (url.toLowerCase().startsWith(prefix)) return entry;
+          } catch (e) {}
+        }
       }
     } catch (e) {
       // fallback: string match
       for (const entry of trustedList) {
         if (!entry || !entry.domain) continue;
-        if (url.toLowerCase().includes(entry.domain.toLowerCase())) return entry;
+        const u = url.toLowerCase();
+        if (u.includes(entry.domain.toLowerCase())) return entry;
+        if (entry.url && u.startsWith(entry.url.toLowerCase())) return entry;
       }
     }
     return null;

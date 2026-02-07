@@ -716,6 +716,22 @@ body {
 
 /* (Trusted badge removed) */
 
+/* Small blue rounded trusted icon shown for JSON-listed trusted sources */
+.source-item__trusted-icon {
+  display: inline-block;
+  width: 18px;
+  height: 10px;
+  background: #2b6fd6;
+  border-radius: 4px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.source-item__number {
+  font-weight: 600;
+  color: var(--muted-text, #333);
+}
+
 /* Citation number styling in messages */
 .citation-number {
   color: var(--accent);

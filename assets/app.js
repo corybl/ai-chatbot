@@ -1142,11 +1142,27 @@ function showSources(citations, append = false, messageNode = null, questionText
       contentWrap.style.flexDirection = 'column';
       contentWrap.style.flex = '1';
 
+      // Row containing the source number (title) and optional trusted icon
+      const titleRow = document.createElement('div');
+      titleRow.style.display = 'flex';
+      titleRow.style.alignItems = 'center';
+      titleRow.style.gap = '8px';
+
       const sourceNum = document.createElement('div');
       sourceNum.className = 'source-item__number';
       // Display number restarts per group
       const displayNum = displayCounter++;
       sourceNum.textContent = `${t('source')} ${displayNum}`;
+      titleRow.appendChild(sourceNum);
+
+      // Show trusted icon only when the server matched the source to the trusted JSON (source.source_id)
+      const isJsonTrusted = (typeof source === 'object' && source.source_id);
+      if (isJsonTrusted) {
+        const trustedIcon = document.createElement('span');
+        trustedIcon.className = 'source-item__trusted-icon';
+        trustedIcon.setAttribute('aria-hidden', 'true');
+        titleRow.appendChild(trustedIcon);
+      }
 
       const url = document.createElement('a');
       url.className = 'source-item__url';
@@ -1155,9 +1171,9 @@ function showSources(citations, append = false, messageNode = null, questionText
       url.rel = 'noopener noreferrer';
       url.textContent = sourceUrl.length > 80 ? sourceUrl.substring(0, 80) + '...' : sourceUrl;
 
-      contentWrap.appendChild(sourceNum);
+      contentWrap.appendChild(titleRow);
 
-      // If server provided a friendly name, show it above the URL
+      // If server provided a friendly name, show it (below the title row, above the URL)
       if (typeof source === 'object' && source.name) {
         const friendly = document.createElement('div');
         friendly.className = 'source-item__title';

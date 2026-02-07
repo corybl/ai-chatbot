@@ -30,6 +30,36 @@
     "notes": "Regulatory agency for food/medical products in the US"
   },
   {
+    "id": "celiaccanada",
+    "name": "Celiac Canada",
+    "domain": "celiac.ca",
+    "url": "https://www.celiac.ca/",
+    "type": "nonprofit",
+    "region": "canada",
+    "trusted_level": 3,
+    "notes": "Canadian celiac disease organization with patient resources and guidance"
+  },
+  {
+    "id": "cdhf",
+    "name": "Canadian Digestive Health Foundation",
+    "domain": "cdhf.ca",
+    "url": "https://www.cdhf.ca/",
+    "type": "nonprofit",
+    "region": "canada",
+    "trusted_level": 2,
+    "notes": "Canadian non-profit focused on digestive health, including celiac disease information and resources"
+  },
+  {
+    "id": "calgaryceliac",
+    "name": "Calgary Celiac Association",
+    "domain": "calgaryceliac.ca",
+    "url": "https://www.calgaryceliac.ca/",
+    "type": "nonprofit",
+    "region": "canada",
+    "trusted_level": 3,
+    "notes": "Canadian celiac disease organization with patient resources and guidance"
+  },
+  {
     "id": "healthcanada",
     "name": "Health Canada",
     "domain": "canada.ca",
