@@ -1005,6 +1005,8 @@ function showInlineSuggestions(userQuery, aiResponse, messageNode) {
 let allSources = [];
 let sourceCounter = 0;
 
+// (Top-tier source helper removed — trust detection now handled server-side)
+
 // Update sources menu bottom position based on composer state
 function updateSourcesMenuPosition() {
   const isComposerFooter = composerEl.classList.contains('composer--bottom') && 
@@ -1154,6 +1156,15 @@ function showSources(citations, append = false, messageNode = null, questionText
       url.textContent = sourceUrl.length > 80 ? sourceUrl.substring(0, 80) + '...' : sourceUrl;
 
       contentWrap.appendChild(sourceNum);
+
+      // If server provided a friendly name, show it above the URL
+      if (typeof source === 'object' && source.name) {
+        const friendly = document.createElement('div');
+        friendly.className = 'source-item__title';
+        friendly.textContent = source.name;
+        contentWrap.appendChild(friendly);
+      }
+
       contentWrap.appendChild(url);
 
       item.appendChild(contentWrap);

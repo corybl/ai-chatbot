@@ -62,6 +62,12 @@ FORMATTING GUIDELINES:
 - Vary text size and emphasis to create visual hierarchy and improve readability
 - Use formatting to help readers scan and understand information quickly
 
+SOURCE PRIORITIZATION & VERIFICATION (CRITICAL):
+- Prioritize established medical institutions, government health agencies, academic medical centers, and reputable non-profit organizations (for example: CDC, NIH, Mayo Clinic, NHS, Health Canada, major university hospitals and recognized celiac foundations).
+- Prefer .gov, .edu, and well-known .org domains when they provide applicable guidance. When using other sources, prefer major publishers and peer-reviewed outlets.
+- Cross-check important factual claims across multiple independent sources. If multiple high-quality sources agree, state the consensus and cite them. If sources disagree or evidence is mixed, explicitly note the disagreement, describe the differing viewpoints, and cite the relevant sources.
+- When you cannot find agreement among reliable sources, state the uncertainty and recommend consulting a healthcare professional.
+
 IMPORTANT: You must ONLY answer questions related to Celiac Disease. If asked about unrelated topics, politely redirect the conversation back to Celiac Disease. Always prioritize medical accuracy and recommend consulting healthcare professionals for medical advice. Prioritize sources and information from the specified region. Respond ONLY in English.`,
     
     fr: `Vous êtes un assistant IA spécialisé exclusivement dans la maladie cœliaque. 
@@ -91,7 +97,13 @@ GUIDELINES DE FORMATAGE :
 - Utilisez les en-têtes (# En-tête, ## Sous-titre) pour organiser l'information en sections claires
 - Utilisez le soulignement (++texte++) avec parcimonie pour les points très importants ou les définitions
 - Variez la taille du texte et l'emphase pour créer une hiérarchie visuelle et améliorer la lisibilité
-- Utilisez le formatage pour aider les lecteurs à scanner et comprendre l'information rapidement
+  - Utilisez le formatage pour aider les lecteurs à scanner et comprendre l'information rapidement
+
+PRIORITÉ DES SOURCES ET VÉRIFICATION (CRITIQUE) :
+- Priorisez les établissements médicaux établis, les agences gouvernementales de santé, les centres médicaux universitaires et les organisations à but non lucratif réputées (par exemple : CDC, NIH, Mayo Clinic, NHS, Santé Canada, hôpitaux universitaires majeurs et fondations cœliaques reconnues).
+- Préférez les domaines en .gov, .edu et les .org bien connus lorsque ces sources fournissent des recommandations pertinentes. Pour les autres sources, préférez les éditeurs majeurs et les publications à comité de lecture.
+- Vérifiez les affirmations importantes en les comparant entre plusieurs sources indépendantes de haute qualité. Si plusieurs sources fiables sont d'accord, indiquez le consensus et citez-les. Si les sources divergent ou que les preuves sont mitigées, signalez explicitement le désaccord, décrivez les points de vue différents et citez les sources concernées.
+- Si vous ne trouvez pas d'accord parmi des sources fiables, indiquez l'incertitude et recommandez de consulter un professionnel de santé.
 
 IMPORTANT : Vous devez UNIQUEMENT répondre aux questions liées à la maladie cœliaque. Si on vous pose des questions sur d'autres sujets, redirigez poliment la conversation vers la maladie cœliaque. Priorisez toujours la précision médicale et recommandez de consulter des professionnels de la santé pour des conseils médicaux. Priorisez les sources et informations de la région spécifiée. Répondez UNIQUEMENT en français.`
   };
@@ -179,24 +191,89 @@ function filterCitationsByRegion(citations, region) {
     }
   });
   
-  // Return region-specific sources first, then others
-  // This ensures region-specific sources are prioritized in the UI
-  const prioritized = [...regionSpecific, ...others];
-  
-  // If we have region-specific sources, prefer showing those
-  // But if we have very few region-specific sources, include some others for context
-  if (regionSpecific.length > 0 && regionSpecific.length < 3 && others.length > 0) {
-    // Include a few non-region sources for context, but prioritize region-specific
-    return prioritized;
+  // Load trusted sources config (if available)
+  let trustedList = [];
+  try {
+    const cfgPath = path.join(__dirname, 'config', 'trusted_sources.json');
+    if (fs.existsSync(cfgPath)) {
+      trustedList = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error loading trusted_sources.json:', e.message);
   }
-  
-  // If we have good number of region-specific sources, prefer those
-  if (regionSpecific.length >= 3) {
-    return regionSpecific;
+
+  // Build a de-duplicated list of source URLs (strings)
+  const normalizeUrl = (c) => typeof c === 'string' ? c : (c.url || c.link || '');
+  const allUrls = [...regionSpecific, ...others].map(normalizeUrl).filter(Boolean);
+  const uniqueUrls = Array.from(new Set(allUrls));
+
+  // Trust scoring patterns (higher = more trusted) as fallback
+  const trustPatterns = [
+    { r: /\.(gov|gov\.[a-z]{2})(?:\/|$)/i, s: 120 },
+    { r: /\b(cdc|nih|who|fda|healthcanada|nhs|mayoclinic|clevelandclinic|johnshopkins|harvard|stanford)\./i, s: 100 },
+    { r: /\.edu(\/|$)/i, s: 90 },
+    { r: /\.org(\/|$)/i, s: 60 },
+  ];
+
+  function getTrustScore(url) {
+    if (!url) return 0;
+    let score = 0;
+    try {
+      const u = url.toLowerCase();
+      // Region match bonus
+      if (patterns.some(p => p.test(u))) score += 30;
+      for (const tp of trustPatterns) {
+        if (tp.r.test(u)) {
+          score += tp.s;
+        }
+      }
+      if (/^https?:\/\//.test(u)) score += 1;
+    } catch (e) {}
+    return score;
   }
-  
-  // Fallback: return all sources if no region-specific ones found
-  return prioritized;
+
+  // Helper to match a URL to trustedList entry
+  function matchTrustedSource(url) {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      for (const entry of trustedList) {
+        if (!entry || !entry.domain) continue;
+        const d = entry.domain.toLowerCase();
+        if (host === d || host.endsWith('.' + d) || host.includes(d)) {
+          return entry;
+        }
+      }
+    } catch (e) {
+      // fallback: string match
+      for (const entry of trustedList) {
+        if (!entry || !entry.domain) continue;
+        if (url.toLowerCase().includes(entry.domain.toLowerCase())) return entry;
+      }
+    }
+    return null;
+  }
+
+  // Build objects with metadata and trust info
+  const items = uniqueUrls.map(u => {
+    const matched = matchTrustedSource(u);
+    const score = matched ? (matched.trusted_level || 0) : getTrustScore(u);
+    return {
+      url: u,
+      name: matched ? matched.name : null,
+      domain: matched ? matched.domain : (() => { try { return new URL(u).hostname } catch(e) { return u } })(),
+      trusted_level: matched ? (matched.trusted_level || 0) : score,
+      source_id: matched ? matched.id : null
+    };
+  });
+
+  // Split region-relevant and others but keep trust ordering
+  const regionItems = items.filter(it => patterns.some(p => p.test(it.url))).sort((a,b) => b.trusted_level - a.trusted_level);
+  const otherItems = items.filter(it => !patterns.some(p => p.test(it.url))).sort((a,b) => b.trusted_level - a.trusted_level);
+
+  if (regionItems.length >= 3) return regionItems.concat(otherItems);
+  if (regionItems.length > 0 && regionItems.length < 3) return regionItems.concat(otherItems);
+  return items.sort((a,b) => b.trusted_level - a.trusted_level);
 }
 
 app.post('/api/chat', async (req, res) => {

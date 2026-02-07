@@ -1,0 +1,132 @@
+[
+  {
+    "id": "cdc",
+    "name": "Centers for Disease Control and Prevention",
+    "domain": "cdc.gov",
+    "url": "https://www.cdc.gov/",
+    "type": "government",
+    "region": "usa",
+    "trusted_level": 3,
+    "notes": "US federal public health agency"
+  },
+  {
+    "id": "nih",
+    "name": "National Institutes of Health",
+    "domain": "nih.gov",
+    "url": "https://www.nih.gov/",
+    "type": "government",
+    "region": "usa",
+    "trusted_level": 3,
+    "notes": "Major US biomedical research agency"
+  },
+  {
+    "id": "fda",
+    "name": "U.S. Food and Drug Administration",
+    "domain": "fda.gov",
+    "url": "https://www.fda.gov/",
+    "type": "government",
+    "region": "usa",
+    "trusted_level": 3,
+    "notes": "Regulatory agency for food/medical products in the US"
+  },
+  {
+    "id": "healthcanada",
+    "name": "Health Canada",
+    "domain": "canada.ca",
+    "url": "https://www.canada.ca/en/health-canada.html",
+    "type": "government",
+    "region": "canada",
+    "trusted_level": 3,
+    "notes": "Canadian federal health department (use .gc.ca/.canada.ca pages)"
+  },
+  {
+    "id": "nhs",
+    "name": "NHS (UK)",
+    "domain": "nhs.uk",
+    "url": "https://www.nhs.uk/",
+    "type": "government",
+    "region": "europe",
+    "trusted_level": 3,
+    "notes": "UK national health service guidance"
+  },
+  {
+    "id": "who",
+    "name": "World Health Organization",
+    "domain": "who.int",
+    "url": "https://www.who.int/",
+    "type": "international",
+    "region": "global",
+    "trusted_level": 3,
+    "notes": "Global public health guidance"
+  },
+  {
+    "id": "mayoclinic",
+    "name": "Mayo Clinic",
+    "domain": "mayoclinic.org",
+    "url": "https://www.mayoclinic.org/",
+    "type": "hospital",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Major academic medical center and patient-facing guidance"
+  },
+  {
+    "id": "clevelandclinic",
+    "name": "Cleveland Clinic",
+    "domain": "clevelandclinic.org",
+    "url": "https://my.clevelandclinic.org/",
+    "type": "hospital",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Reputable clinical resource"
+  },
+  {
+    "id": "johnshopkins",
+    "name": "Johns Hopkins Medicine",
+    "domain": "johnshopkins.edu",
+    "url": "https://www.hopkinsmedicine.org/",
+    "type": "academic",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Major academic medical center"
+  },
+  {
+    "id": "harvard",
+    "name": "Harvard Medical School / Harvard Health",
+    "domain": "harvard.edu",
+    "url": "https://www.health.harvard.edu/",
+    "type": "academic",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Authoritative academic medical content"
+  },
+  {
+    "id": "stanford",
+    "name": "Stanford Health Care",
+    "domain": "stanford.edu",
+    "url": "https://stanfordhealthcare.org/",
+    "type": "academic",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Academic medical center"
+  },
+  {
+    "id": "beyondceliac",
+    "name": "Beyond Celiac",
+    "domain": "beyondceliac.org",
+    "url": "https://www.beyondceliac.org/",
+    "type": "nonprofit",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Reputable non-profit focused on celiac disease"
+  },
+  {
+    "id": "celiacorg",
+    "name": "Celiac Disease Foundation",
+    "domain": "celiac.org",
+    "url": "https://celiac.org/",
+    "type": "nonprofit",
+    "region": "usa",
+    "trusted_level": 2,
+    "notes": "Established non-profit focused on celiac disease"
+  }
+]

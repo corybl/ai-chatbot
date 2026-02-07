@@ -613,6 +613,13 @@ body {
   line-height: 1.5;
 }
 
+.source-item__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
 .source-item__url:hover {
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -706,6 +713,8 @@ body {
 .source-group--collapsed .source-group__count {
   display: inline-block;
 }
+
+/* (Trusted badge removed) */
 
 /* Citation number styling in messages */
 .citation-number {
