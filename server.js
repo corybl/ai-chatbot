@@ -219,6 +219,55 @@ app.post('/api/chat', async (req, res) => {
       msg => msg.role === 'user' || msg.role === 'assistant'
     );
 
+    // Normalize history so messages alternate between user and assistant.
+    // Perplexity API requires messages after system to alternate user/assistant.
+    // Merge consecutive messages with the same role by concatenating their content.
+    const normalizedHistory = [];
+    for (const msg of filteredHistory) {
+      if (!msg || !msg.role) continue;
+      const content = msg.content || msg.message || '';
+      if (normalizedHistory.length === 0) {
+        normalizedHistory.push({ role: msg.role, content });
+      } else {
+        const last = normalizedHistory[normalizedHistory.length - 1];
+        if (last.role === msg.role) {
+          last.content = `${last.content}\n\n${content}`.trim();
+        } else {
+          normalizedHistory.push({ role: msg.role, content });
+        }
+      }
+    }
+
+    // Ensure the normalized history starts with a 'user' message.
+    // If it starts with 'assistant', drop that leading assistant content
+    // because after system messages the sequence must begin with user/tool.
+    if (normalizedHistory.length > 0 && normalizedHistory[0].role === 'assistant') {
+      normalizedHistory.shift();
+    }
+
+    // Helper to validate and fix alternation in a messages array (after potential insertions)
+    function enforceAlternation(messagesArray) {
+      const fixed = [];
+      for (const m of messagesArray) {
+        if (!m || !m.role) continue;
+        const content = m.content || '';
+        if (fixed.length === 0) {
+          fixed.push({ role: m.role, content });
+        } else {
+          const last = fixed[fixed.length - 1];
+          if (last.role === m.role) {
+            // Merge same-role messages
+            last.content = `${last.content}\n\n${content}`.trim();
+          } else {
+            fixed.push({ role: m.role, content });
+          }
+        }
+      }
+      // After merging, ensure it alternates starting with user; if it starts with assistant, drop it
+      if (fixed.length > 0 && fixed[0].role === 'assistant') fixed.shift();
+      return fixed;
+    }
+
     // Get system prompt for the selected language and region
     const systemPrompt = getSystemPrompt(language, region);
     
@@ -237,21 +286,27 @@ app.post('/api/chat', async (req, res) => {
     
     // Option 1: Try with system message (preferred if supported)
     if (process.env.USE_SYSTEM_MESSAGE !== 'false') {
-      messages = [
-        { role: 'system', content: systemPrompt },
-        ...filteredHistory,
-        { role: 'user', content: enhancedUserMessage }
-      ];
+      // If last item in normalizedHistory is 'user', merge the new user message into it
+      const histCopy = JSON.parse(JSON.stringify(normalizedHistory || []));
+      if (histCopy.length > 0 && histCopy[histCopy.length - 1].role === 'user') {
+        histCopy[histCopy.length - 1].content = `${histCopy[histCopy.length - 1].content}\n\n${enhancedUserMessage}`.trim();
+        messages = [ { role: 'system', content: systemPrompt }, ...histCopy ];
+      } else {
+        messages = [ { role: 'system', content: systemPrompt }, ...histCopy, { role: 'user', content: enhancedUserMessage } ];
+      }
+      // Enforce alternation and merge any accidental duplicates
+      const fixed = enforceAlternation(messages.slice(1)); // exclude system for enforce
+      messages = [ { role: 'system', content: systemPrompt }, ...fixed ];
     } else {
       // Option 2: Incorporate system prompt into first user message
-      const enhancedMessage = filteredHistory.length === 0 
-        ? `${systemPrompt}\n\nUser question: ${enhancedUserMessage}`
-        : enhancedUserMessage;
-      
-      messages = [
-        ...filteredHistory,
-        { role: 'user', content: enhancedMessage }
-      ];
+      const histCopy = JSON.parse(JSON.stringify(normalizedHistory || []));
+      if (histCopy.length > 0 && histCopy[histCopy.length - 1].role === 'user') {
+        histCopy[histCopy.length - 1].content = `${histCopy[histCopy.length - 1].content}\n\n${enhancedUserMessage}`.trim();
+        messages = histCopy;
+      } else {
+        messages = [ ...histCopy, { role: 'user', content: enhancedUserMessage } ];
+      }
+      messages = enforceAlternation(messages);
     }
 
     // Model name - Perplexity uses simpler model names now

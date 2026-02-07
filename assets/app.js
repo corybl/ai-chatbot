@@ -1077,7 +1077,10 @@ languageSelectEl.addEventListener('change', (e) => {
   currentLanguage = e.target.value;
   localStorage.setItem('preferred-language', currentLanguage);
   updateTranslations();
-  // Keep chat history - new responses will use the new language
+  // Remove prior assistant messages from conversation history so
+  // the backend and new assistant replies follow the newly selected language.
+  // Keep user messages for context.
+  conversationHistory = conversationHistory.filter(msg => msg.role === 'user');
   updateComposerPosition();
   addEmptyHintIfNeeded();
 });
@@ -1087,7 +1090,10 @@ regionSelectEl.value = currentRegion;
 regionSelectEl.addEventListener('change', (e) => {
   currentRegion = e.target.value;
   localStorage.setItem('preferred-region', currentRegion);
-  // Keep chat history - new responses will use the new region
+  // Remove prior assistant messages from conversation history so
+  // subsequent responses prioritize the newly selected region.
+  // Keep user messages for context.
+  conversationHistory = conversationHistory.filter(msg => msg.role === 'user');
   updateComposerPosition();
   addEmptyHintIfNeeded();
 });
