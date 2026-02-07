@@ -334,6 +334,62 @@ function postProcessFormatting(bubbleElement) {
     return match;
   });
   
+  // Underline: ++text++
+  html = html.replace(/\+\+([^+\n]+?)\+\+/g, (match, text, offset, fullString) => {
+    const beforeMatch = fullString.substring(0, offset);
+    const lastOpenTag = beforeMatch.lastIndexOf('<');
+    const lastCloseTag = beforeMatch.lastIndexOf('>');
+    if (lastOpenTag > lastCloseTag) return match;
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      return `<u>${trimmed}</u>`;
+    }
+    return match;
+  });
+
+  // Bold with __text__ if present
+  html = html.replace(/__([^_\n]+?)__/g, (match, text, offset, fullString) => {
+    const beforeMatch = fullString.substring(0, offset);
+    const lastOpenTag = beforeMatch.lastIndexOf('<');
+    const lastCloseTag = beforeMatch.lastIndexOf('>');
+    if (lastOpenTag > lastCloseTag) return match;
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      return `<strong>${trimmed}</strong>`;
+    }
+    return match;
+  });
+
+  // Italic: *text* and _text_
+  html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, (match, text, offset, fullString) => {
+    const beforeMatch = fullString.substring(0, offset);
+    const lastOpenTag = beforeMatch.lastIndexOf('<');
+    const lastCloseTag = beforeMatch.lastIndexOf('>');
+    if (lastOpenTag > lastCloseTag) return match;
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      return `<em>${trimmed}</em>`;
+    }
+    return match;
+  });
+  html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, (match, text, offset, fullString) => {
+    const beforeMatch = fullString.substring(0, offset);
+    const lastOpenTag = beforeMatch.lastIndexOf('<');
+    const lastCloseTag = beforeMatch.lastIndexOf('>');
+    if (lastOpenTag > lastCloseTag) return match;
+    const trimmed = text.trim();
+    if (trimmed && trimmed.length > 0) {
+      return `<em>${trimmed}</em>`;
+    }
+    return match;
+  });
+
+  // Final cleanup: remove any stray leftover markers that remain visible
+  // but avoid touching HTML tags.
+  // Remove sequences of **, ++, __ that are not part of tags
+  html = html.replace(/(\*\*|\+\+|__)/g, '');
+  // Remove stray single asterisks or underscores used as unmatched markers
+  html = html.replace(/(?<!\w)(\*|_){1}(?!\w)/g, '');
   // Update the HTML
   bubbleElement.innerHTML = html;
 }
