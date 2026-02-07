@@ -706,8 +706,8 @@ formEl.addEventListener('submit', async (e) => {
     const citationMarkers = response.citationMarkers || null;
     
     // Show sources menu as soon as we get the response (while typing)
-    // Append new sources instead of replacing
-    showSources(citations, true, typing);
+    // Append new sources grouped by the user question
+    showSources(citations, true, typing, userQuery);
     
     // Simulate typing animation with citations
     await simulateAiTyping(typing, reply, citations);
@@ -964,7 +964,7 @@ function updateSourcesMenuPosition() {
 }
 
 // Sources functionality - now accumulates sources instead of replacing
-function showSources(citations, append = false, messageNode = null) {
+function showSources(citations, append = false, messageNode = null, questionText = '') {
   // If not appending, clear existing sources (only when explicitly clearing)
   if (!append) {
     // Only clear if there are no citations (empty response)
@@ -993,7 +993,7 @@ function showSources(citations, append = false, messageNode = null) {
     // Create mapping from local citation index to global source index for this message
     const citationMapping = {};
     let mappingCreated = false;
-    
+
     // Add a separator if appending to existing sources
     if (append && sourcesContentEl.children.length > 0) {
       const separator = document.createElement('div');
@@ -1001,14 +1001,52 @@ function showSources(citations, append = false, messageNode = null) {
       separator.innerHTML = '<div class="source-separator__line"></div>';
       sourcesContentEl.appendChild(separator);
     }
-    
+
+    // Create a group container for this question
+    const group = document.createElement('div');
+    group.className = 'source-group';
+
+    const header = document.createElement('div');
+    header.className = 'source-group__header';
+    const title = document.createElement('div');
+    title.className = 'source-group__title';
+    title.textContent = questionText && questionText.trim() ? questionText.trim() : (currentLanguage === 'fr' ? 'Sources' : 'Sources');
+    header.appendChild(title);
+
+    // Count indicator (hidden by default; shown when collapsed)
+    const countEl = document.createElement('div');
+    countEl.className = 'source-group__count';
+    countEl.textContent = '';
+    header.appendChild(countEl);
+
+    // Toggle icon
+    const toggle = document.createElement('div');
+    toggle.className = 'source-group__toggle';
+    toggle.textContent = '▾';
+    header.appendChild(toggle);
+
+    // Clicking header toggles collapse
+    header.addEventListener('click', () => {
+      const collapsed = group.classList.toggle('source-group--collapsed');
+      toggle.textContent = collapsed ? '▸' : '▾';
+    });
+
+    group.appendChild(header);
+
+    const list = document.createElement('div');
+    list.className = 'source-group__list';
+
+    // displayCounter tracks visible source numbering within this group (starts at 1)
+    let displayCounter = 1;
     citations.forEach((source, localIndex) => {
+      // Normalize source string
+      const sourceUrl = typeof source === 'string' ? source : (source.url || source.link || '');
+
       // Check if source already exists to avoid duplicates
-      const existingSources = Array.from(sourcesContentEl.querySelectorAll('.source-item__url'));
       const existingItem = Array.from(sourcesContentEl.querySelectorAll('.source-item')).find(
-        item => item.querySelector('.source-item__url')?.href === source
+        item => item.querySelector('.source-item__url')?.href === sourceUrl
       );
-      
+
       if (existingItem) {
         // Source already exists - map to existing global index
         const existingIndex = parseInt(existingItem.getAttribute('data-source-index'));
@@ -1016,38 +1054,67 @@ function showSources(citations, append = false, messageNode = null) {
         mappingCreated = true;
         return; // Skip adding duplicate
       }
-      
-      // New source - add it
+
+      // New source - add it under this group
       const item = document.createElement('div');
       item.className = 'source-item';
       sourceCounter++;
       const currentSourceNum = sourceCounter;
       const globalIndex = currentSourceNum - 1;
       item.setAttribute('data-source-index', globalIndex);
-      
+
       // Map local index to global index
       citationMapping[localIndex] = globalIndex;
       mappingCreated = true;
-      
+
+      // Favicon (attempt to load from origin/favicon.ico)
+      const favicon = document.createElement('img');
+      favicon.className = 'source-item__favicon';
+      try {
+        const urlObj = new URL(sourceUrl);
+        favicon.src = `${urlObj.origin}/favicon.ico`;
+      } catch (e) {
+        favicon.src = '';
+      }
+      // If favicon fails, hide the image
+      favicon.onerror = () => { favicon.style.display = 'none'; };
+
+      const contentWrap = document.createElement('div');
+      contentWrap.style.display = 'flex';
+      contentWrap.style.flexDirection = 'column';
+      contentWrap.style.flex = '1';
+
       const sourceNum = document.createElement('div');
       sourceNum.className = 'source-item__number';
-      sourceNum.textContent = `${t('source')} ${currentSourceNum}`;
-      
+      // Display number restarts per group
+      const displayNum = displayCounter++;
+      sourceNum.textContent = `${t('source')} ${displayNum}`;
+
       const url = document.createElement('a');
       url.className = 'source-item__url';
-      url.href = source;
+      url.href = sourceUrl;
       url.target = '_blank';
       url.rel = 'noopener noreferrer';
-      url.textContent = source.length > 80 ? source.substring(0, 80) + '...' : source;
-      
-      item.appendChild(sourceNum);
-      item.appendChild(url);
-      sourcesContentEl.appendChild(item);
-      
+      url.textContent = sourceUrl.length > 80 ? sourceUrl.substring(0, 80) + '...' : sourceUrl;
+
+      contentWrap.appendChild(sourceNum);
+      contentWrap.appendChild(url);
+
+      item.appendChild(contentWrap);
+      item.appendChild(favicon);
+      list.appendChild(item);
+
       // Add to tracking array
-      allSources.push(source);
+      allSources.push(sourceUrl);
     });
-    
+
+    group.appendChild(list);
+    sourcesContentEl.appendChild(group);
+
+    // Update count (number of source items actually added to this group)
+    const addedCount = list.querySelectorAll('.source-item').length;
+    countEl.textContent = `(${addedCount})`;
+
     // Store citation mapping for this message if we have a message node
     if (messageNode && mappingCreated) {
       const messageId = messageNode.getAttribute('data-message-id') || 
@@ -1055,7 +1122,7 @@ function showSources(citations, append = false, messageNode = null) {
       messageNode.setAttribute('data-message-id', messageId);
       citationMappings.set(messageId, citationMapping);
     }
-    
+
     // Scroll to bottom of sources menu to show new sources
     requestAnimationFrame(() => {
       sourcesContentEl.scrollTo({ top: sourcesContentEl.scrollHeight, behavior: 'smooth' });
