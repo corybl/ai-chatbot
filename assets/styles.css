@@ -147,7 +147,7 @@ body {
   flex-direction: column; /* Changed to column to allow suggestions below */
   align-items: flex-start;
   width: 100%;
-  max-width: 800px; /* Increased from 600px for better readability */
+  max-width: 1200px; /* 1.5x wider (was 800px) for better readability */
   margin: 10px 0;
   gap: 12px;
   padding: 0 20px; /* Add horizontal padding */
@@ -354,6 +354,37 @@ body {
   background: #f8f9fa;
 }
 
+/* Citation number styles */
+.citation-number {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: super;
+  color: var(--accent);
+  background: rgba(13, 110, 253, 0.1);
+  border-radius: 3px;
+  padding: 2px 5px;
+  margin: 0 2px;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.citation-number:hover {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+  transform: scale(1.1);
+}
+
+.citation-number--highlighted {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.5);
+}
+
 .meta {
   margin-top: 6px;
   font-size: 12px;
@@ -365,7 +396,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 768px; /* Perplexity-style width */
+  max-width: 1152px; /* 1.5x wider (was 768px) */
   display: flex;
   justify-content: center;
   transition: bottom 0.3s ease;

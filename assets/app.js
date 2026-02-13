@@ -268,48 +268,48 @@ function formatText(text) {
       return convertMarkdownTableToHTML(processed);
     }
     
-    // Headers first (before other formatting) - must have space after #
-    // Only process if it's a proper header format
-    if (/^###\s+/.test(processed)) {
-      processed = processed.replace(/^###\s+(.+)$/, '<h3>$1</h3>');
-    } else if (/^##\s+/.test(processed)) {
-      processed = processed.replace(/^##\s+(.+)$/, '<h2>$1</h2>');
-    } else if (/^#\s+/.test(processed)) {
-      processed = processed.replace(/^#\s+(.+)$/, '<h1>$1</h1>');
-    }
-    // Check if it's a list item
-    else if (/^[\-\*]\s+/.test(processed)) {
-      // Extract the list item content and apply inline formatting
-      const listContent = processed.replace(/^[\-\*]\s+/, '');
-      const formattedContent = applyInlineFormatting(listContent);
-      processed = '<li>' + formattedContent + '</li>';
-    } else if (/^\d+\.\s+/.test(processed)) {
-      // Extract the list item content and apply inline formatting
-      const listContent = processed.replace(/^\d+\.\s+/, '');
-      const formattedContent = applyInlineFormatting(listContent);
-      processed = '<li>' + formattedContent + '</li>';
-    }
-    // Regular paragraph - apply inline formatting
-    else {
-      // Remove any citation markers that might have been left in
-      processed = processed.replace(/\[\d+\]/g, '');
+    // Split paragraph by single newlines to handle multi-line content
+    const lines = processed.split('\n');
+    const processedLines = [];
+    
+    for (let line of lines) {
+      let processedLine = line.trim();
+      if (!processedLine) continue;
       
-      // Remove lines that are only # characters (common formatting artifact)
-      const lines = processed.split('\n');
-      const cleanedLines = lines.filter(line => {
-        const trimmed = line.trim();
-        return trimmed && !/^#+\s*$/.test(trimmed);
-      });
-      processed = cleanedLines.join('\n').trim();
-      
-      if (processed) {
-        processed = applyInlineFormatting(processed);
-      } else {
-        return ''; // Skip empty paragraphs
+      // Check if this line is a list item (starts with -, *, or •)
+      if (/^[\-\*•]\s+/.test(processedLine)) {
+        // Extract the list item content and apply inline formatting
+        const listContent = processedLine.replace(/^[\-\*•]\s+/, '');
+        const formattedContent = applyInlineFormatting(listContent);
+        processedLines.push('<li>' + formattedContent + '</li>');
+      } 
+      // Check if it's a numbered list (1., 2., etc.)
+      else if (/^\d+\.\s+/.test(processedLine)) {
+        // Extract the list item content and apply inline formatting
+        const listContent = processedLine.replace(/^\d+\.\s+/, '');
+        const formattedContent = applyInlineFormatting(listContent);
+        processedLines.push('<li>' + formattedContent + '</li>');
+      }
+      // Check if it's a header
+      else if (/^###\s+/.test(processedLine)) {
+        processedLines.push(processedLine.replace(/^###\s+(.+)$/, '<h3>$1</h3>'));
+      } else if (/^##\s+/.test(processedLine)) {
+        processedLines.push(processedLine.replace(/^##\s+(.+)$/, '<h2>$1</h2>'));
+      } else if (/^#\s+/.test(processedLine)) {
+        processedLines.push(processedLine.replace(/^#\s+(.+)$/, '<h1>$1</h1>'));
+      }
+      // Regular line
+      else {
+        // Remove any stray citation markers
+        processedLine = processedLine.replace(/\[[^\]]+\]/g, '');
+        
+        if (processedLine.trim()) {
+          processedLines.push(applyInlineFormatting(processedLine));
+        }
       }
     }
     
-    return processed;
+    return processedLines.join('\n');
   }).filter(p => p);
   
   // Group consecutive list items
@@ -318,15 +318,20 @@ function formatText(text) {
   
   for (let i = 0; i < processedParagraphs.length; i++) {
     const para = processedParagraphs[i];
+    const lines = para.split('\n');
     
-    if (para.startsWith('<li>')) {
-      currentList.push(para);
-    } else {
-      if (currentList.length > 0) {
-        result.push('<ul>' + currentList.join('') + '</ul>');
-        currentList = [];
+    for (let line of lines) {
+      if (line.startsWith('<li>')) {
+        currentList.push(line);
+      } else {
+        if (currentList.length > 0) {
+          result.push('<ul>' + currentList.join('') + '</ul>');
+          currentList = [];
+        }
+        if (line.trim()) {
+          result.push(line);
+        }
       }
-      result.push(para);
     }
   }
   
@@ -334,7 +339,7 @@ function formatText(text) {
     result.push('<ul>' + currentList.join('') + '</ul>');
   }
   
-  // Join with double line breaks, then convert single newlines to <br>
+  // Join with double line breaks, then convert remaining newlines to <br>
   formatted = result.join('<br><br>');
   formatted = formatted.replace(/\n/g, '<br>');
   
@@ -471,23 +476,56 @@ function addCitationNumbers(text, citations) {
     return text;
   }
   
-  // Extract citation markers [1], [2], etc. from the original text
-  const citationMarkerRegex = /\[(\d+)\]/g;
+  // Extract all types of citation markers: [1], [web:1], [descriptive text], etc.
+  const citationMarkerRegex = /\[([^\]]+)\]/g;
   const citationMarkers = [];
   let match;
   const originalText = text;
   
   // Find all citation markers and their positions in the original text
   while ((match = citationMarkerRegex.exec(originalText)) !== null) {
-    citationMarkers.push({
-      index: match.index,
-      number: parseInt(match[1]),
-      fullMatch: match[0]
-    });
+    const citationContent = match[1];
+    let citationIndex = -1;
+    
+    // Parse different citation formats
+    // Format 1: [1], [2], [3] - numeric index
+    if (/^\d+$/.test(citationContent)) {
+      citationIndex = parseInt(citationContent) - 1;
+    }
+    // Format 2: [web:1] - web source format
+    else if (/^web:(\d+)$/.test(citationContent)) {
+      citationIndex = parseInt(citationContent.match(/\d+/)[0]) - 1;
+    }
+    // Format 3: [descriptive text] - try to find matching citation by description
+    else {
+      // For descriptive citations, find the first citation that partially matches or use as label
+      for (let i = 0; i < citations.length; i++) {
+        const citation = citations[i];
+        const citationText = typeof citation === 'string' ? citation : (citation.name || citation.url || '');
+        // Do a loose match - if the description appears in the citation
+        if (citationText.toLowerCase().includes(citationContent.toLowerCase().slice(0, 20))) {
+          citationIndex = i;
+          break;
+        }
+      }
+      // If no match found, try to use it as a label for the first available citation
+      if (citationIndex === -1 && citations.length > 0) {
+        citationIndex = 0; // Default to first citation if descriptive match fails
+      }
+    }
+    
+    if (citationIndex >= 0 && citationIndex < citations.length) {
+      citationMarkers.push({
+        index: match.index,
+        citationIndex: citationIndex,
+        fullMatch: match[0],
+        content: citationContent
+      });
+    }
   }
   
   // Remove citation markers from text (they'll be replaced with superscripts at paragraph ends)
-  let cleanedText = text.replace(/\[\d+\]/g, '');
+  let cleanedText = text.replace(/\[[^\]]+\]/g, '');
   
   // Split text into paragraphs by double newlines (before HTML formatting)
   const paragraphs = cleanedText.split(/\n\n+/).filter(p => p.trim().length > 0);
@@ -513,11 +551,8 @@ function addCitationNumbers(text, citations) {
       // Check if marker is in this paragraph's range
       // Account for slight offsets due to marker removal
       if (marker.index >= boundary.start - 5 && marker.index <= boundary.end + 5) {
-        const citationIndex = marker.number - 1; // Convert [1] to index 0
-        if (citationIndex >= 0 && citationIndex < citations.length) {
-          paragraphCitations[i].add(citationIndex);
-          break; // Found the paragraph, move to next marker
-        }
+        paragraphCitations[i].add(marker.citationIndex);
+        break; // Found the paragraph, move to next marker
       }
     }
   });
@@ -533,7 +568,7 @@ function addCitationNumbers(text, citations) {
     // Add citation numbers at the end of the paragraph
     const citationNumbers = paraCitations.map(citationIndex => {
       const citationNum = citationIndex + 1;
-      return `<sup class="citation-number" data-citation="${citationIndex}">${citationNum}</sup>`;
+      return `<sup class="citation-number" data-citation="${citationIndex}" title="Click to view source">${citationNum}</sup>`;
     }).join(' ');
     
     return trimmedPara + (citationNumbers ? ` ${citationNumbers}` : '');
@@ -556,6 +591,28 @@ function setupCitationHovers(bubbleElement, citations, messageNode = null) {
     citationEl.addEventListener('mouseleave', () => {
       unhighlightAllSources();
     });
+    
+    // Add click handler to open the source URL
+    citationEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (citationIndex >= 0 && citationIndex < citations.length) {
+        const citation = citations[citationIndex];
+        const url = typeof citation === 'string' ? citation : (citation.url || citation.link || '');
+        
+        if (url) {
+          // Open URL in new tab
+          window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+          // If no URL, at least highlight the source in the sources panel
+          highlightSource(citationIndex, messageNode);
+        }
+      }
+    });
+    
+    // Add pointer cursor to indicate clickability
+    citationEl.style.cursor = 'pointer';
   });
 }
 
@@ -1254,10 +1311,9 @@ languageSelectEl.addEventListener('change', (e) => {
   currentLanguage = e.target.value;
   localStorage.setItem('preferred-language', currentLanguage);
   updateTranslations();
-  // Remove prior assistant messages from conversation history so
-  // the backend and new assistant replies follow the newly selected language.
-  // Keep user messages for context.
-  conversationHistory = conversationHistory.filter(msg => msg.role === 'user');
+  // Clear conversation history entirely when changing language
+  // to avoid mixing languages and contexts
+  conversationHistory = [];
   updateComposerPosition();
   addEmptyHintIfNeeded();
 });
@@ -1267,10 +1323,9 @@ regionSelectEl.value = currentRegion;
 regionSelectEl.addEventListener('change', (e) => {
   currentRegion = e.target.value;
   localStorage.setItem('preferred-region', currentRegion);
-  // Remove prior assistant messages from conversation history so
-  // subsequent responses prioritize the newly selected region.
-  // Keep user messages for context.
-  conversationHistory = conversationHistory.filter(msg => msg.role === 'user');
+  // Clear conversation history entirely when changing region
+  // to avoid mixing regional contexts
+  conversationHistory = [];
   updateComposerPosition();
   addEmptyHintIfNeeded();
 });
