@@ -6,8 +6,13 @@ An AI-powered chatbot specialized exclusively in Celiac Disease, using Perplexit
 
 - 🤖 **Perplexity AI Integration** - Real-time, web-grounded responses
 - 🎯 **Celiac Disease Focus** - Specialized exclusively in Celiac Disease topics
-- 💬 **Modern Chat UI** - Beautiful dark theme with message bubbles
-- 🔄 **Conversation History** - Maintains context across messages
+- 🌍 **Language & Region Switching** - English/French and region-aware sourcing
+- 🔎 **URL Analysis** - Paste a URL and the chatbot will analyze page content
+- ✅ **Trusted Sources Prioritization** - Uses trusted sources first with fallback only when needed
+- 🧾 **Clickable Citations** - Superscript citations open source URLs and highlight in the sources panel
+- 📋 **Tables & Lists** - Markdown tables and lists render with proper formatting
+- 💬 **Modern Chat UI** - Clean message bubbles with improved readability
+- 🔄 **Conversation History** - Maintains context across messages (cleared when switching language/region)
 - ⌨️ **Keyboard Shortcuts** - Enter to send, Shift+Enter for newline
 - 🧹 **Clear Conversation** - Reset chat history with one click
 
@@ -21,7 +26,7 @@ An AI-powered chatbot specialized exclusively in Celiac Disease, using Perplexit
 1. **Install Dependencies**
 
 ```bash
-cd /home/corybl/Downloads/ai-chatbot
+cd PROJECT_DIRECTORY/ai-chatbot
 npm install
 ```
 
@@ -56,7 +61,9 @@ Navigate to `http://localhost:3000` in your web browser.
 
 - Type your questions about Celiac Disease in the input field
 - Press **Enter** to send, or **Shift+Enter** for a new line
-- The chatbot will provide accurate, up-to-date information
+- Paste a URL to have the chatbot analyze the page content
+- Click citation numbers to open sources in a new tab
+- Switch language/region from the header (this resets conversation context)
 - Click the **↺** button to clear the conversation
 
 ## Example Questions
@@ -78,17 +85,34 @@ ai-chatbot/
 ├── assets/
 │   ├── styles.css      # UI styles
 │   └── app.js          # Frontend JavaScript
+├── config/
+│   └── trusted_sources.json  # Trusted source registry
 └── README.md           # This file
 ```
 
 ## API Configuration
 
-The chatbot uses Perplexity's `sonar` model by default (most current and reliable). The system prompt is configured to:
+The chatbot uses Perplexity's `sonar` model by default. The system prompt is configured to:
 
 - Only answer questions about Celiac Disease
 - Redirect unrelated questions back to Celiac Disease topics
 - Provide medical accuracy while recommending professional consultation
 - Cover symptoms, diagnosis, treatment, diet, and resources
+- Require careful product analysis for hidden gluten sources
+- Encourage clear formatting (lists and tables)
+## Trusted Sources
+
+The chatbot prioritizes sources listed in [config/trusted_sources.json](config/trusted_sources.json). If fewer than 3 trusted sources are available in the Perplexity citations for a response, the chatbot supplements with the highest-scoring non-trusted sources.
+
+To update priority, edit the `trusted_level` values in the JSON file.
+
+## URL Analysis
+
+If a user includes one or more URLs in a question, the server fetches page content and injects it into the prompt. This helps the model analyze ingredients, labeling, or medical content directly from the page.
+
+Notes:
+- Up to 3 URLs per message are processed
+- A short text extraction is used to avoid overly large prompts
 
 ## Troubleshooting
 
@@ -119,6 +143,11 @@ The chatbot uses Perplexity's `sonar` model by default (most current and reliabl
 - Ensure the server is running: `npm start`
 - Check that you're accessing `http://localhost:3000`
 - Verify the port number matches your `.env` file
+**Citations are showing as raw [brackets]**
+- This should be converted to clickable citation numbers. If not, refresh the page and check the browser console for JS errors.
+
+**Lists show dashes instead of bullet points**
+- Lists are converted to HTML bullet points in the frontend. Ensure you are running the latest assets and hard refresh the browser.
 
 **CORS Errors**
 - The server is configured to allow CORS from the same origin
