@@ -318,6 +318,42 @@ body {
   margin-bottom: 8px;
 }
 
+/* Markdown table styles */
+.message--bot .bubble .markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 16px;
+  line-height: 1.6;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.message--bot .bubble .markdown-table th,
+.message--bot .bubble .markdown-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.message--bot .bubble .markdown-table th {
+  background: var(--panel);
+  font-weight: 600;
+  font-variation-settings: 'wght' 600;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+}
+
+.message--bot .bubble .markdown-table tr:last-child td {
+  border-bottom: none;
+}
+
+.message--bot .bubble .markdown-table tr:hover {
+  background: #f8f9fa;
+}
+
 .meta {
   margin-top: 6px;
   font-size: 12px;
@@ -716,15 +752,14 @@ body {
 
 /* (Trusted badge removed) */
 
-/* Small blue rounded trusted icon shown for JSON-listed trusted sources */
-.source-item__trusted-icon {
+/* Highlight for titles of trusted sources (from config/trusted_sources.json) */
+.source-item__title--trusted {
   display: inline-block;
-  width: 18px;
-  height: 10px;
-  background: #2b6fd6;
-  border-radius: 4px;
-  margin-left: 6px;
-  flex-shrink: 0;
+  background: #e8f3ff;
+  color: #0b5bd6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 .source-item__number {

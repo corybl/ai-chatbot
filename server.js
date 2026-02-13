@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 // Node 18+ has native fetch built-in
@@ -272,17 +274,30 @@ function filterCitationsByRegion(citations, region) {
       name: matched ? matched.name : null,
       domain: matched ? matched.domain : (() => { try { return new URL(u).hostname } catch(e) { return u } })(),
       trusted_level: matched ? (matched.trusted_level || 0) : score,
-      source_id: matched ? matched.id : null
+      source_id: matched ? matched.id : null,
+      is_trusted: matched !== null
     };
   });
 
-  // Split region-relevant and others but keep trust ordering
-  const regionItems = items.filter(it => patterns.some(p => p.test(it.url))).sort((a,b) => b.trusted_level - a.trusted_level);
-  const otherItems = items.filter(it => !patterns.some(p => p.test(it.url))).sort((a,b) => b.trusted_level - a.trusted_level);
+  // Separate trusted and non-trusted sources
+  const trustedItems = items.filter(it => it.is_trusted).sort((a,b) => b.trusted_level - a.trusted_level);
+  const nonTrustedItems = items.filter(it => !it.is_trusted).sort((a,b) => b.trusted_level - a.trusted_level);
 
-  if (regionItems.length >= 3) return regionItems.concat(otherItems);
-  if (regionItems.length > 0 && regionItems.length < 3) return regionItems.concat(otherItems);
-  return items.sort((a,b) => b.trusted_level - a.trusted_level);
+  // Hybrid approach: prefer trusted sources, supplement only when necessary
+  const MIN_SOURCES = 3; // Minimum sources to show
+  
+  if (trustedItems.length >= MIN_SOURCES) {
+    // We have enough trusted sources, return only those
+    return trustedItems;
+  } else if (trustedItems.length > 0) {
+    // We have some trusted sources but not enough - supplement with top non-trusted
+    const needed = MIN_SOURCES - trustedItems.length;
+    const supplement = nonTrustedItems.slice(0, needed);
+    return trustedItems.concat(supplement);
+  } else {
+    // No trusted sources found - return top non-trusted sources (fallback only)
+    return nonTrustedItems.slice(0, MIN_SOURCES);
+  }
 }
 
 app.post('/api/chat', async (req, res) => {

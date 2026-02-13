@@ -197,6 +197,58 @@ function replaceTyping(node, finalText, citations = []) {
   setupCitationHovers(bubble, citations, node);
 }
 
+// Check if a paragraph is a markdown table
+function isMarkdownTable(text) {
+  const lines = text.split('\n');
+  // A table needs at least 2 lines (header + separator)
+  if (lines.length < 2) return false;
+  
+  // Check if we have pipe characters indicating table structure
+  const hasPipes = lines.some(line => line.includes('|'));
+  if (!hasPipes) return false;
+  
+  // Check for separator line (contains hyphens and pipes)
+  const hasSeparator = lines.some(line => /^\|?[\s\-:|]+\|[\s\-:|]*$/.test(line.trim()));
+  return hasSeparator;
+}
+
+// Convert markdown table to HTML table
+function convertMarkdownTableToHTML(text) {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  if (lines.length < 2) return text;
+  
+  let html = '<table class="markdown-table">';
+  let inHeader = true;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Skip separator line (contains only |, -, :, and spaces)
+    if (/^\|?[\s\-:|]+\|[\s\-:|]*$/.test(line)) {
+      inHeader = false;
+      continue;
+    }
+    
+    // Parse table row
+    let cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
+    
+    // Build row
+    const tag = inHeader ? 'th' : 'td';
+    html += '<tr>';
+    cells.forEach(cell => {
+      // Apply inline formatting to cell content
+      const formattedCell = applyInlineFormatting(cell);
+      html += `<${tag}>${formattedCell}</${tag}>`;
+    });
+    html += '</tr>';
+    
+    if (inHeader) inHeader = false;
+  }
+  
+  html += '</table>';
+  return html;
+}
+
 // Format text with markdown-like formatting (bold, underline, lists, etc.)
 // Uses conservative styling approach - only key terms, not whole paragraphs
 function formatText(text) {
@@ -210,6 +262,11 @@ function formatText(text) {
   const processedParagraphs = paragraphs.map(para => {
     let processed = para.trim();
     if (!processed) return '';
+    
+    // Check if this paragraph is a markdown table
+    if (isMarkdownTable(processed)) {
+      return convertMarkdownTableToHTML(processed);
+    }
     
     // Headers first (before other formatting) - must have space after #
     // Only process if it's a proper header format
@@ -288,110 +345,72 @@ function formatText(text) {
 // This catches formatting that might have been missed in the initial processing
 function postProcessFormatting(bubbleElement) {
   if (!bubbleElement) return;
-  
-  // Get the HTML content
+
+  // Work on the HTML string first for block-level patterns (code fences, headings)
   let html = bubbleElement.innerHTML;
-  
-  // Process triple hashtags (###) - make text larger and bold
-  // Look for ### followed by space and text
-  // Match ### that appears in text content (not inside HTML tags)
-  html = html.replace(/###\s+([^<]+?)(?=<|$|###)/g, (match, text) => {
-    // Skip if this appears to be inside an HTML tag
-    if (match.includes('<') && !match.includes('>')) {
-      return match;
-    }
-    
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      // Create h3 with larger font and bold
-      return `<h3 style="font-size: 1.3em; font-weight: 700;">${trimmed}</h3>`;
-    }
-    return match;
-  });
-  
-  // Process double asterisks (**text**) - make text bold
-  // Look for **text** patterns that weren't already converted
-  html = html.replace(/\*\*([^*\n]+?)\*\*/g, (match, text, offset, fullString) => {
-    // Check if we're inside an HTML tag by looking at what comes before
-    const beforeMatch = fullString.substring(0, offset);
-    const lastOpenTag = beforeMatch.lastIndexOf('<');
-    const lastCloseTag = beforeMatch.lastIndexOf('>');
-    
-    // If we're inside a tag (last < is after last >), skip it
-    if (lastOpenTag > lastCloseTag) {
-      return match;
-    }
-    
-    // Skip if already converted to <strong>
-    if (beforeMatch.includes('<strong>') && fullString.substring(offset).includes('</strong>')) {
-      return match;
-    }
-    
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      return `<strong>${trimmed}</strong>`;
-    }
-    return match;
-  });
-  
-  // Underline: ++text++
-  html = html.replace(/\+\+([^+\n]+?)\+\+/g, (match, text, offset, fullString) => {
-    const beforeMatch = fullString.substring(0, offset);
-    const lastOpenTag = beforeMatch.lastIndexOf('<');
-    const lastCloseTag = beforeMatch.lastIndexOf('>');
-    if (lastOpenTag > lastCloseTag) return match;
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      return `<u>${trimmed}</u>`;
-    }
-    return match;
+
+  // Escape helper for code blocks
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Convert triple-backtick code blocks to <pre><code> (preserve content)
+  html = html.replace(/```([\s\S]*?)```/g, (m, code) => {
+    return '<pre><code>' + escapeHtml(code) + '</code></pre>';
   });
 
-  // Bold with __text__ if present
-  html = html.replace(/__([^_\n]+?)__/g, (match, text, offset, fullString) => {
-    const beforeMatch = fullString.substring(0, offset);
-    const lastOpenTag = beforeMatch.lastIndexOf('<');
-    const lastCloseTag = beforeMatch.lastIndexOf('>');
-    if (lastOpenTag > lastCloseTag) return match;
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      return `<strong>${trimmed}</strong>`;
-    }
-    return match;
+  // Convert markdown headings (lines starting with #) into bold lines
+  html = html.replace(/^#{1,6}\s*(.+)$/gm, (m, txt) => {
+    return `<div class="markdown-heading">${txt.trim()}</div>`;
   });
 
-  // Italic: *text* and _text_
-  html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, (match, text, offset, fullString) => {
-    const beforeMatch = fullString.substring(0, offset);
-    const lastOpenTag = beforeMatch.lastIndexOf('<');
-    const lastCloseTag = beforeMatch.lastIndexOf('>');
-    if (lastOpenTag > lastCloseTag) return match;
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      return `<em>${trimmed}</em>`;
+  // Now operate safely on text nodes only to avoid mangling existing HTML tags.
+  const container = document.createElement('div');
+  container.innerHTML = html;
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+  textNodes.forEach(node => {
+    let t = node.nodeValue;
+    if (!t || !t.trim()) return;
+
+    // Inline code `code`
+    t = t.replace(/`([^`]+?)`/g, (m, c) => '<code>' + escapeHtml(c) + '</code>');
+
+    // Bold **text** or __text__
+    t = t.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/__([^_]+?)__/g, '<strong>$1</strong>');
+
+    // Underline ++text++
+    t = t.replace(/\+\+([^+]+?)\+\+/g, '<u>$1</u>');
+
+    // Strikethrough ~~text~~
+    t = t.replace(/~~([^~]+?)~~/g, '<s>$1</s>');
+
+    // Italic *text* or _text_ (avoid converting inside already converted tags)
+    t = t.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+    t = t.replace(/(?<!_)_([^_]+?)_(?!_)/g, '<em>$1</em>');
+
+    // After replacements, if any markdown markers remain unmatched, strip them
+    t = t.replace(/\*{1,2}|_{1,2}|\+{2}|`{1,3}|#{1,6}|~{2}/g, '');
+
+    // If changes occurred, replace the text node with HTML nodes
+    if (t !== node.nodeValue) {
+      const span = document.createElement('span');
+      span.innerHTML = t;
+      const parent = node.parentNode;
+      while (span.firstChild) parent.insertBefore(span.firstChild, node);
+      parent.removeChild(node);
     }
-    return match;
-  });
-  html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, (match, text, offset, fullString) => {
-    const beforeMatch = fullString.substring(0, offset);
-    const lastOpenTag = beforeMatch.lastIndexOf('<');
-    const lastCloseTag = beforeMatch.lastIndexOf('>');
-    if (lastOpenTag > lastCloseTag) return match;
-    const trimmed = text.trim();
-    if (trimmed && trimmed.length > 0) {
-      return `<em>${trimmed}</em>`;
-    }
-    return match;
   });
 
-  // Final cleanup: remove any stray leftover markers that remain visible
-  // but avoid touching HTML tags.
-  // Remove sequences of **, ++, __ that are not part of tags
-  html = html.replace(/(\*\*|\+\+|__)/g, '');
-  // Remove stray single asterisks or underscores used as unmatched markers
-  html = html.replace(/(?<!\w)(\*|_){1}(?!\w)/g, '');
-  // Update the HTML
-  bubbleElement.innerHTML = html;
+  // Final pass: remove any stray standalone markers left in HTML
+  let cleaned = container.innerHTML;
+  cleaned = cleaned.replace(/(^|\s)(\*{1,2}|_{1,2}|\+{2}|`{1,3}|#{1,6}|~{2})(?=\s|$)/g, '$1');
+
+  bubbleElement.innerHTML = cleaned;
 }
 
 // Apply inline formatting (bold, italic, underline) to text
@@ -1155,14 +1174,9 @@ function showSources(citations, append = false, messageNode = null, questionText
       sourceNum.textContent = `${t('source')} ${displayNum}`;
       titleRow.appendChild(sourceNum);
 
-      // Show trusted icon only when the server matched the source to the trusted JSON (source.source_id)
-      const isJsonTrusted = (typeof source === 'object' && source.source_id);
-      if (isJsonTrusted) {
-        const trustedIcon = document.createElement('span');
-        trustedIcon.className = 'source-item__trusted-icon';
-        trustedIcon.setAttribute('aria-hidden', 'true');
-        titleRow.appendChild(trustedIcon);
-      }
+      // Mark trusted sources based on `trusted_level` returned by the server
+      // (do not restrict to presence in the JSON; allow heuristic trust scoring)
+      const isJsonTrusted = (typeof source === 'object' && (source.trusted_level || 0) >= 3);
 
       const url = document.createElement('a');
       url.className = 'source-item__url';
@@ -1177,8 +1191,21 @@ function showSources(citations, append = false, messageNode = null, questionText
       if (typeof source === 'object' && source.name) {
         const friendly = document.createElement('div');
         friendly.className = 'source-item__title';
+        if (isJsonTrusted) friendly.classList.add('source-item__title--trusted');
         friendly.textContent = source.name;
         contentWrap.appendChild(friendly);
+      } else {
+        // No friendly name: create a title element from hostname to allow highlighting when trusted
+        try {
+          const u = new URL(sourceUrl);
+          const friendly = document.createElement('div');
+          friendly.className = 'source-item__title';
+          if (isJsonTrusted) friendly.classList.add('source-item__title--trusted');
+          friendly.textContent = u.hostname;
+          contentWrap.appendChild(friendly);
+        } catch (e) {
+          // fallback: no-op, rely on URL line
+        }
       }
 
       contentWrap.appendChild(url);

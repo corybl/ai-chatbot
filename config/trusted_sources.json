@@ -6,7 +6,7 @@
     "url": "https://www.cdc.gov/",
     "type": "government",
     "region": "usa",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "US federal public health agency"
   },
   {
@@ -16,7 +16,7 @@
     "url": "https://www.nih.gov/",
     "type": "government",
     "region": "usa",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "Major US biomedical research agency"
   },
   {
@@ -26,8 +26,18 @@
     "url": "https://www.fda.gov/",
     "type": "government",
     "region": "usa",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "Regulatory agency for food/medical products in the US"
+  },
+  {
+    "id": "rare_diseases",
+    "name": "National Organization for Rare Disorders (NORD)",
+    "domain": "rarediseases.org",
+    "url": "https://rarediseases.org/",
+    "type": "nonprofit",
+    "region": "usa",
+    "trusted_level": 120,
+    "notes": "US non-profit focused on rare diseases, including celiac disease information and resources"
   },
   {
     "id": "celiaccanada",
@@ -36,8 +46,38 @@
     "url": "https://www.celiac.ca/",
     "type": "nonprofit",
     "region": "canada",
-    "trusted_level": 3,
+    "trusted_level": 120,
     "notes": "Canadian celiac disease organization with patient resources and guidance"
+  },
+  {
+    "id": "wrha",
+    "name": "Winnipeg Regional Health Authority",
+    "domain": "wrha.mb.ca",
+    "url": "https://www.wrha.mb.ca/",
+    "type": "non-profit",
+    "region": "canada",
+    "trusted_level": 120,
+    "notes": "Canadian regional health authority with celiac disease resources and guidance"
+  },
+  {
+    "id": "caringforkids",
+    "name": "Caring for Kids",
+    "domain": "caringforkids.cps.ca",
+    "url": "https://www.caringforkids.cps.ca/",
+    "type": "nonprofit",
+    "region": "canada",
+    "trusted_level": 120,
+    "notes": "Canadian pediatric health resource from the Canadian Paediatric Society (includes celiac disease information)"
+  },
+  {
+    "id": "diabetescanada",
+    "name": "Diabetes Canada",
+    "domain": "diabetes.ca",
+    "url": "https://www.diabetes.ca/",
+    "type": "nonprofit",
+    "region": "canada",
+    "trusted_level": 120,
+    "notes": "Canadian diabetes organization with patient resources and guidance (relevant for celiac disease patients with diabetes)"
   },
   {
     "id": "cdhf",
@@ -46,7 +86,7 @@
     "url": "https://www.cdhf.ca/",
     "type": "nonprofit",
     "region": "canada",
-    "trusted_level": 2,
+    "trusted_level": 120,
     "notes": "Canadian non-profit focused on digestive health, including celiac disease information and resources"
   },
   {
@@ -56,7 +96,7 @@
     "url": "https://www.calgaryceliac.ca/",
     "type": "nonprofit",
     "region": "canada",
-    "trusted_level": 3,
+    "trusted_level": 120,
     "notes": "Canadian celiac disease organization with patient resources and guidance"
   },
   {
@@ -66,7 +106,7 @@
     "url": "https://www.canada.ca/en/health-canada.html",
     "type": "government",
     "region": "canada",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "Canadian federal health department (use .gc.ca/.canada.ca pages)"
   },
   {
@@ -76,7 +116,7 @@
     "url": "https://www.nhs.uk/",
     "type": "government",
     "region": "europe",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "UK national health service guidance"
   },
   {
@@ -86,7 +126,7 @@
     "url": "https://www.who.int/",
     "type": "international",
     "region": "global",
-    "trusted_level": 3,
+    "trusted_level": 150,
     "notes": "Global public health guidance"
   },
   {
@@ -96,7 +136,7 @@
     "url": "https://www.mayoclinic.org/",
     "type": "hospital",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 130,
     "notes": "Major academic medical center and patient-facing guidance"
   },
   {
@@ -106,7 +146,7 @@
     "url": "https://my.clevelandclinic.org/",
     "type": "hospital",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 130,
     "notes": "Reputable clinical resource"
   },
   {
@@ -116,7 +156,7 @@
     "url": "https://www.hopkinsmedicine.org/",
     "type": "academic",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 130,
     "notes": "Major academic medical center"
   },
   {
@@ -126,7 +166,7 @@
     "url": "https://www.health.harvard.edu/",
     "type": "academic",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 130,
     "notes": "Authoritative academic medical content"
   },
   {
@@ -136,7 +176,7 @@
     "url": "https://stanfordhealthcare.org/",
     "type": "academic",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 130,
     "notes": "Academic medical center"
   },
   {
@@ -146,7 +186,7 @@
     "url": "https://www.beyondceliac.org/",
     "type": "nonprofit",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 120,
     "notes": "Reputable non-profit focused on celiac disease"
   },
   {
@@ -156,7 +196,7 @@
     "url": "https://celiac.org/",
     "type": "nonprofit",
     "region": "usa",
-    "trusted_level": 2,
+    "trusted_level": 120,
     "notes": "Established non-profit focused on celiac disease"
   }
 ]
