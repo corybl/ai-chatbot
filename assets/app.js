@@ -1110,6 +1110,7 @@ function showSources(citations, append = false, messageNode = null, questionText
       sourcesContentEl.appendChild(noSources);
       // Show the menu with smooth slide animation
       sourcesMenuEl.classList.add('sources-menu--visible');
+      chatEl.classList.add('chat--sources-menu-visible');
       updateSourcesMenuPosition();
       return;
     }
@@ -1298,11 +1299,13 @@ function showSources(citations, append = false, messageNode = null, questionText
   
   // Show the menu with smooth slide animation
   sourcesMenuEl.classList.add('sources-menu--visible');
+  chatEl.classList.add('chat--sources-menu-visible');
   updateSourcesMenuPosition();
 }
 
 function hideSources() {
   sourcesMenuEl.classList.remove('sources-menu--visible');
+  chatEl.classList.remove('chat--sources-menu-visible');
 }
 
 // Language selector event
